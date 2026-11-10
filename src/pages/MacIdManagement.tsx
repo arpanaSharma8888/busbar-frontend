@@ -36,7 +36,7 @@ export default function MacIdManagement() {
 
   return <Stack gap="md">
     <Group justify="space-between">
-      <div><Title order={2}>MAC ID Management</Title><Text size="sm" c="dimmed">Device IDs and their MAC addresses</Text></div>
+      <Title order={2}>Devices</Title>
       <Badge variant="light">{devices.length} devices</Badge>
     </Group>
     {error && <Alert color="red" title="Unable to refresh devices">{error}{devices.length > 0 && ' Previously loaded devices are shown below.'}</Alert>}

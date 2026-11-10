@@ -31,7 +31,7 @@ export default function Login() {
         <form onSubmit={submit}>
           <Stack gap="md">
             <ThemeIcon size={48} radius="md" variant="light"><Zap size={28} /></ThemeIcon>
-            <div><Title order={2}>Busbar Monitoring</Title><Text c="dimmed" size="sm">Sign in to your monitoring workspace</Text></div>
+            <div><Title order={2}>Busbar Monitoring</Title><Text c="dimmed" size="sm">Sign in</Text></div>
             {location.state?.passwordChanged === true && <Alert color="green">Password changed successfully. Please sign in again.</Alert>}
             {error && <Alert color="red" title="Sign-in failed" role="alert">{error}</Alert>}
             <TextInput label="Username" placeholder="Enter your username" autoComplete="username" required value={username} disabled={status === 'loading'} onChange={event => { setUsername(event.currentTarget.value); dispatch(clearLoginError()); }} />

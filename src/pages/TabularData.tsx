@@ -79,7 +79,7 @@ export default function TabularData() {
   };
 
   return <Stack gap="md">
-    <Group justify="space-between"><div><Title order={2}>Tabular Data</Title><Text size="sm" c="dimmed">Voltage readings by device and timestamp</Text></div><Badge variant="light">{rows.length} readings</Badge></Group>
+    <Group justify="space-between"><Title order={2}>Records</Title><Badge variant="light">{rows.length} readings</Badge></Group>
     <Paper withBorder p="md" radius="md">
       <form onSubmit={event => { event.preventDefault(); if (validRange) void load(deviceId, from, to); }}>
         <Group align="end">
@@ -94,7 +94,7 @@ export default function TabularData() {
     </Paper>
     {error && <Alert color="red" title="Unable to load all records">{error}</Alert>}
     <Paper withBorder p="md" radius="md" aria-busy={loading}>
-      <Group justify="space-between" mb="md"><Title order={4}>Voltage records</Title><Text size="xs" c="dimmed">{loadedRange || 'Last 24 hours'}</Text></Group>
+      <Group justify="space-between" mb="md"><Text size="sm" fw={600}>Readings</Text><Text size="xs" c="dimmed">{loadedRange || 'Last 24 hours'}</Text></Group>
       <Table.ScrollContainer minWidth={650}><Table striped highlightOnHover>
         <Table.Thead><Table.Tr>{['Device', 'MAC address', 'Date & time', 'Voltage (V)'].map(label => <Table.Th key={label}>{label}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>

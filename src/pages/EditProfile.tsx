@@ -94,7 +94,7 @@ export default function EditProfile() {
   const initials = displayName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
 
   return <Stack gap="md" maw={1000}>
-    <Group justify="space-between"><div><Title order={2}>Edit Profile</Title><Text size="sm" c="dimmed">Your account details</Text></div><Button variant="light" leftSection={<RefreshCw size={16} />} loading={loading} disabled={saving || changingPassword} onClick={() => void load()}>Refresh profile</Button></Group>
+    <Group justify="space-between"><Title order={2}>Profile</Title><Button variant="light" leftSection={<RefreshCw size={16} />} loading={loading} disabled={saving || changingPassword} onClick={() => void load()}>Refresh</Button></Group>
     {error && <Alert color="red" title="Profile request failed">{error}</Alert>}
     {success && <Alert color="green">{success}</Alert>}
     <Paper withBorder p="lg" radius="md" aria-busy={loading}>

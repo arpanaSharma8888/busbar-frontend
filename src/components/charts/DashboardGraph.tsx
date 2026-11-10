@@ -62,7 +62,7 @@ export default function DashboardGraph({ deviceId, mode, active, fullPage = fals
         <SegmentedControl size="xs" aria-label="Time window" value={minutes} onChange={value => {
           setMinutes(String(value)); setReadings([]); setPlottedRange(null); setUpdated(''); setError('');
         }} data={[{ label: '10 min', value: '10' }, { label: '30 min', value: '30' }, { label: '1 hour', value: '60' }]} />
-        <Badge variant="dot" color={paused ? 'gray' : error ? 'red' : 'teal'}>{paused ? 'Paused' : error ? 'Offline' : 'Live · 10s'}</Badge>
+        <Badge variant="dot" color={paused ? 'gray' : error ? 'red' : 'teal'}>{paused ? 'Paused' : error ? 'Offline' : 'Live Â· 10s'}</Badge>
       </Group> : <Group align="end" gap="sm">
         <TextInput size="xs" label="From" type="datetime-local" value={from} onChange={event => setFrom(event.currentTarget.value)} />
         <TextInput size="xs" label="To" type="datetime-local" value={to} onChange={event => setTo(event.currentTarget.value)} />
@@ -85,6 +85,6 @@ export default function DashboardGraph({ deviceId, mode, active, fullPage = fals
     <VoltageChart readings={readings} height={expanded ? 620 : fullPage ? 480 : 350}
       loading={loading} timeRange={plottedRange ?? (mode === 'historical' ? { from, to } : null)}
       emptyMessage={error ? 'Readings unavailable' : mode === 'historical' && !range ? 'Choose a period and apply' : 'No readings in this period'} />
-    <Group justify="space-between" px={8}><Text size="xs" c="dimmed">{readings.length.toLocaleString()} readings</Text><Text size="xs" c="dimmed">{loading ? 'Updating…' : updated ? `Updated ${updated}` : ''}</Text></Group>
+    <Group justify="space-between" px={8}><Text size="xs" c="dimmed">{readings.length.toLocaleString()} readings</Text><Text size="xs" c="dimmed">{loading ? 'Updatingâ€¦' : updated ? `Updated ${updated}` : ''}</Text></Group>
   </Stack>;
 }

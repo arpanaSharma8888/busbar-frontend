@@ -21,7 +21,7 @@ export default function GraphPage({ mode }: { mode: 'realtime' | 'historical' })
   }, []);
   return <Stack gap="md">
     <Group justify="space-between"><Title order={2}>{mode === 'realtime' ? 'Live voltage' : 'History'}</Title>
-      <Select aria-label="Device" placeholder={loading ? 'Loading devices…' : 'Select device'} w={190}
+      <Select aria-label="Device" placeholder={loading ? 'Loading devicesâ€¦' : 'Select device'} w={190}
         data={devices.map(device => ({ value: device.deviceId, label: `Device ${device.deviceId}` }))}
         value={deviceId || null} allowDeselect={false} onChange={value => { if (value) setDeviceId(value); }} />
     </Group>

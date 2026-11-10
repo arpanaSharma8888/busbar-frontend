@@ -13,11 +13,11 @@
 .monitor-dashboard .dashboard-title { font-size: 23px; letter-spacing: -1px; font-weight: 650; }
 .device-card { transition: border-color .18s, box-shadow .18s; box-shadow: 0 3px 12px rgb(20 40 70 / 3%); }
 .device-card:hover { border-color: var(--mantine-color-blue-4); }
-.device-card-selected { border-color: var(--mantine-color-blue-5); box-shadow: 0 0 0 1px var(--mantine-color-blue-5), 0 6px 18px rgb(34 139 230 / 8%); }
+.device-card-selected { border-color: var(--mantine-color-blue-5); box-shadow: none; }
 .device-voltage { padding: 2px 0; color: var(--mantine-color-blue-6); }
 .device-voltage h2 { font-size: 27px; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
 .dashboard-empty { padding: 36px 24px; text-align: center; color: var(--mantine-color-dimmed); border-style: dashed; }
-.dashboard-graph { min-width: 0; box-shadow: 0 4px 24px rgb(20 40 70 / 4%); }
+.dashboard-graph { min-width: 0; box-shadow: none; }
 .dashboard-graph .mantine-Tabs-list { gap: 6px; border-bottom: 1px solid var(--mantine-color-default-border); padding-bottom: 8px; }
 .dashboard-graph .mantine-Tabs-tab { border-radius: 8px; font-weight: 600; }
 .dashboard-graph-empty { min-height: clamp(180px, 30vh, 300px); display: grid; place-items: center; text-align: center; border-radius: 10px; background-image: linear-gradient(var(--mantine-color-default-border) 1px, transparent 1px), linear-gradient(90deg, var(--mantine-color-default-border) 1px, transparent 1px); background-size: 64px 64px; }

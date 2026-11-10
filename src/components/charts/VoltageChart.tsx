@@ -95,14 +95,15 @@ export default function VoltageChart({ readings, height = 420, timeRange, loadin
     if (!chart) return;
     chart.setData(data);
     chart.setScale('x', { min: bounds[0], max: bounds[1] });
+    if (!data[1].some(value => value != null)) chart.setScale('y', { min: 0, max: 1 });
     if (tooltipRef.current) tooltipRef.current.hidden = true;
   }, [data, bounds, height, theme]);
 
   return <section className="voltage-chart" aria-label="Voltage over time" aria-busy={loading}>
     <Group justify="space-between" className="chart-readout" gap="sm">
       <Group gap="lg"><Text size="sm" fw={600}><span className="chart-series-dot" />{title || 'Voltage'} <span className="chart-unit">V</span></Text>
-        <Text size="sm" className="chart-latest">{latest == null ? '—' : `${latest.toFixed(3)} V`}</Text>
-        {minimum != null && maximum != null && <Text size="xs" c="dimmed">Min {minimum.toFixed(3)} · Max {maximum.toFixed(3)}</Text>}
+        <Text size="sm" className="chart-latest">{latest == null ? 'â€”' : `${latest.toFixed(3)} V`}</Text>
+        {minimum != null && maximum != null && <Text size="xs" c="dimmed">Min {minimum.toFixed(3)} Â· Max {maximum.toFixed(3)}</Text>}
       </Group>
       <Button size="compact-xs" variant="subtle" color="gray" disabled={!points.length} leftSection={<RotateCcw size={13} />} onClick={() => {
         chartRef.current?.setData(data);
@@ -112,8 +113,8 @@ export default function VoltageChart({ readings, height = 420, timeRange, loadin
     <div className="chart-canvas" style={{ minHeight: height }}>
       <div ref={containerRef} />
       <div ref={tooltipRef} className="chart-tooltip" hidden />
-      {!points.length && <div className="chart-empty" role="status"><span>{loading ? 'Loading readings…' : emptyMessage}</span></div>}
+      {!points.length && <div className="chart-empty" role="status"><span>{loading ? 'Loading readingsâ€¦' : emptyMessage}</span></div>}
     </div>
-    <div className="chart-caption"><span>{new Date(bounds[0] * 1000).toLocaleDateString()} – {new Date(bounds[1] * 1000).toLocaleDateString()}</span><span>Local time · Drag to zoom</span></div>
+    <div className="chart-caption"><span>{new Date(bounds[0] * 1000).toLocaleDateString()} â€“ {new Date(bounds[1] * 1000).toLocaleDateString()}</span><span>Local time Â· Drag to zoom</span></div>
   </section>;
 }
