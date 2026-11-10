@@ -39,11 +39,14 @@ export async function loginRequest(credentials: LoginCredentials, signal: AbortS
   return session;
 }
 
+
 function authUrl(path: string): string {
-  const base = import.meta.env.DEV
-    ? '/auth-backend'
-    : import.meta.env.VITE_AUTH_API_BASE_URL;
-  if (!base) throw new Error('VITE_AUTH_API_BASE_URL is not configured');
+  const base = import.meta.env.VITE_AUTH_API_BASE_URL;
+
+  if (!base) {
+    throw new Error('Authentication API URL is not configured');
+  }
+
   return `${base.replace(/\/$/, '')}${path}`;
 }
 
