@@ -19,8 +19,7 @@ export default function Header() {
   return (
     <Group justify="space-between" h="100%" px="lg">
       <div>
-        <Text fw={600}>Busbar Voltage Monitoring</Text>
-        <Text size="xs" c="dimmed">Industrial Monitoring Dashboard</Text>
+        <Text fw={650} size="sm">Busbar <Text span c="dimmed" fw={400}>/ Monitoring</Text></Text>
       </div>
 
       <Group gap="md">

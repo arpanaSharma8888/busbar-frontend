@@ -8,7 +8,7 @@ import { authenticatedFetch } from './apiClient';
 async function readVoltageJson<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('application/json') && !contentType.includes('+json')) {
-    throw new Error('The voltage API returned a non-JSON response. Check VITE_API_BASE_URL and the /backend proxy configuration, then restart the frontend server.');
+    throw new Error('The voltage API returned a non-JSON response. Check VITE_API_BASE_URL. For deployed sites, configure the API URL in the build environment and rebuild and redeploy the frontend. For local development, check the /backend proxy and restart Vite.');
   }
   return response.json();
 }

@@ -55,14 +55,13 @@ export default function Dashboard() {
   return (
     <Stack gap={14} className="monitor-dashboard">
       <Group justify="space-between" align="end">
-        <div><Text className="dashboard-eyebrow">BUS BAR / MONITORING</Text><Title order={2} className="dashboard-title">Device overview</Title></div>
-        <Badge size="lg" variant="light" color="blue">{deviceList.length} devices</Badge>
+        <Title order={2}>Dashboard</Title>
+        <Text size="sm" c="dimmed">{deviceList.length} {deviceList.length === 1 ? 'device' : 'devices'}</Text>
       </Group>
       <section aria-label="Devices">
-      <Group justify="space-between" mb={8}><Text size="sm" fw={600}>Devices</Text><Text size="xs" c="dimmed">Select a device to view its curve</Text></Group>
       {listLoading && <Group py="lg"><Loader size="sm" /><Text size="sm" c="dimmed">Loading devices...</Text></Group>}
       {listError && <Alert color="red" title="Unable to load devices" mb="md">{listError} Retrying automatically.</Alert>}
-      {!listLoading && !listError && !deviceList.length && <Paper className="dashboard-empty" withBorder><Radio size={30} strokeWidth={1.4} /><Title order={4} mt="md">No devices connected</Title><Text size="sm" c="dimmed" mt={6}>No devices were returned by the voltage API.</Text></Paper>}
+      {!listLoading && !listError && !deviceList.length && <Paper className="dashboard-empty" withBorder><Radio size={30} strokeWidth={1.4} /><Title order={4} mt="md">No devices connected</Title></Paper>}
       <div className="device-strip">
         {deviceList.map(device => {
           const state = devices[device.deviceId];
@@ -73,20 +72,20 @@ export default function Dashboard() {
               <Group justify="space-between"><Text size="sm" fw={600} truncate title={`Device ${device.deviceId}`}>Device {device.deviceId}</Text><Badge size="xs" color={state?.error ? 'red' : 'gray'} variant="light">{state?.error ? 'Unavailable' : !state ? 'Loading' : reading ? 'Available' : 'No data'}</Badge></Group>
               <Group gap="xs" className="device-voltage"><Zap size={16} /><Title order={2}>{!state ? <Loader size="sm" /> : reading ? <NumberFormatter value={reading.voltage} decimalScale={3} suffix=" V" fixedDecimalScale /> : '--'}</Title></Group>
               <Text size="xs" c="dimmed" truncate>MAC: {reading?.macId ?? device.macId ?? '--'}</Text>
-              <Text size="xs" c="dimmed">Received: {reading?.receivedAt ? new Date(reading.receivedAt).toLocaleString() : '--'}</Text>
+              <Text size="xs" c="dimmed">{reading?.receivedAt ? new Date(reading.receivedAt).toLocaleString() : 'Awaiting first reading'}</Text>
               {state?.error && <Alert color="red" title="Unable to refresh">{state.error}</Alert>}
-              <Button size="compact-xs" fullWidth justify="space-between" rightSection={<ArrowUpRight size={16} />} variant={selected ? 'light' : 'subtle'} aria-pressed={selected} onClick={() => setDeviceId(device.deviceId)}>{selected ? 'Selected device' : 'View graph'}</Button>
+              <Button size="compact-xs" fullWidth justify="space-between" rightSection={<ArrowUpRight size={16} />} variant={selected ? 'light' : 'subtle'} aria-pressed={selected} onClick={() => setDeviceId(device.deviceId)}>{selected ? 'Selected' : 'View'}</Button>
             </Stack>
           </Card>;
         })}
       </div>
       </section>
       <Paper withBorder p="md" radius="md" className="dashboard-graph">
-        <Group justify="space-between" mb={8}><Title order={4}>Voltage trend</Title>{deviceId && <Badge variant="light">Device {deviceId}</Badge>}</Group>
-        <Tabs variant="pills" value={tab} onChange={setTab} keepMounted>
+        <Group justify="space-between" mb={8}><Title order={4}>{deviceId ? `Device ${deviceId}` : 'Voltage'}</Title></Group>
+        <Tabs value={tab} onChange={setTab} keepMounted>
           <Tabs.List mb={10}>
-            <Tabs.Tab value="realtime" leftSection={<Activity size={16} />}>Realtime curve</Tabs.Tab>
-            <Tabs.Tab value="historical" leftSection={<History size={16} />}>Historical curve</Tabs.Tab>
+            <Tabs.Tab value="realtime" leftSection={<Activity size={16} />}>Live</Tabs.Tab>
+            <Tabs.Tab value="historical" leftSection={<History size={16} />}>History</Tabs.Tab>
           </Tabs.List>
           <Tabs.Panel value="realtime">{deviceId ? <DashboardGraph key={`realtime-${deviceId}`} deviceId={deviceId} mode="realtime" active={tab === 'realtime'} /> : <GraphPlaceholder />}</Tabs.Panel>
           <Tabs.Panel value="historical">{deviceId ? <DashboardGraph key={`historical-${deviceId}`} deviceId={deviceId} mode="historical" active={tab === 'historical'} /> : <GraphPlaceholder />}</Tabs.Panel>
@@ -97,5 +96,5 @@ export default function Dashboard() {
 }
 
 function GraphPlaceholder() {
-  return <div className="dashboard-graph-empty"><div><Activity size={28} strokeWidth={1.5} /><Text fw={600} mt="sm">Waiting for a device</Text><Text size="sm" c="dimmed" mt={4}>Select a connected device to explore voltage over time.</Text></div></div>;
+  return <div className="dashboard-graph-empty"><div><Activity size={28} strokeWidth={1.5} /><Text fw={600} mt="sm">No device selected</Text></div></div>;
 }

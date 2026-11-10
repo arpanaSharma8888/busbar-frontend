@@ -1,0 +1,16 @@
+.voltage-chart { min-width: 0; }
+.chart-readout { padding: 16px 8px 8px; border-top: 1px solid var(--mantine-color-default-border); }
+.chart-series-dot { display: inline-block; width: 18px; height: 3px; background: #1672c4; vertical-align: middle; margin-right: 9px; border-radius: 2px; }
+.chart-unit { margin-left: 6px; font-weight: 400; color: var(--mantine-color-dimmed); }
+.chart-latest { font-variant-numeric: tabular-nums; font-weight: 650; }
+.chart-canvas { position: relative; min-width: 0; }
+.chart-empty { position: absolute; inset: 20px 22px 48px 72px; display: grid; place-items: center; pointer-events: none; }
+.chart-empty span { background: var(--mantine-color-body); color: var(--mantine-color-dimmed); border: 1px solid var(--mantine-color-default-border); padding: 12px 20px; border-radius: 6px; font-size: 13px; text-align: center; }
+.chart-tooltip { position: absolute; z-index: 4; pointer-events: none; background: var(--mantine-color-body); border: 1px solid var(--mantine-color-default-border); box-shadow: 0 4px 16px #00000012; padding: 10px 14px; border-radius: 6px; min-width: 180px; font-size: 12px; }
+.chart-tooltip span, .chart-tooltip strong { display: block; }
+.chart-tooltip span { color: var(--mantine-color-dimmed); margin-bottom: 5px; }
+.chart-tooltip strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.chart-caption { display: flex; justify-content: space-between; gap: 12px; padding: 0 22px 8px 72px; color: var(--mantine-color-dimmed); font-size: 11px; }
+.voltage-chart .u-cursor-x { border-right: 1px dashed #94a3b8; }
+.voltage-chart .u-select { background: #1672c418; }
+@media (max-width: 600px) { .chart-caption { padding-left: 12px; flex-wrap: wrap; } .chart-readout { gap: 8px; } }

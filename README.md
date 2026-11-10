@@ -74,6 +74,31 @@ export default defineConfig([
 
 ```
 
+## Production voltage API configuration
+
+The Azure deployment workflow sets `VITE_API_BASE_URL` to the auth Function App
+origin (`https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net`).
+The client uses `/api/read/getAllDevices` and the other authenticated proxy paths; do not append
+`/api` to this base URL. `/backend` is only a local Vite development proxy and
+does not exist in the deployed static site. Using it in production previously
+returned the frontend HTML through the navigation fallback instead of JSON.
+
+After changing the workflow, push to `main` and wait for the Azure Static Web Apps
+build and deployment to complete. Vite embeds `VITE_*` values during the build;
+changing Azure runtime settings alone does not update the frontend bundle.
+
+In the auth Function App's CORS settings, allow the exact deployed frontend
+origin (scheme and hostname, without a path), including any custom domain used.
+The proxy validates the frontend's bearer token and admin role before forwarding
+to the read functions with server-held function keys. Viewers currently receive
+403. Keep the read functions at `authLevel: 'function'`. Never put a function key
+in a `VITE_*` variable or frontend source. Locally, `/backend` forwards to
+`VITE_AUTH_API_BASE_URL`; the Vite proxy no longer injects a function key.
+
+Verify in browser Network tools that `getAllDevices` calls the auth Function App's
+`/api/read/getAllDevices` endpoint and returns JSON. A CORS error indicates the allowed
+origin needs attention; a 401/403 requires checking backend authentication.
+
 ## Authentication
 
 Set `VITE_AUTH_API_BASE_URL=https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net` in `.env.local` for authentication.

@@ -14,14 +14,10 @@ export default defineConfig(({ mode, command }) => {
       proxy: isDev
         ? {
             '/backend': {
-              target: env.AZURE_READ_API_URL,
+              target: env.VITE_AUTH_API_BASE_URL,
               changeOrigin: true,
               rewrite: (path) =>
                 path.replace(/^\/backend/, ''),
-              headers: {
-                'x-functions-key':
-                  env.AZURE_READ_FUNCTION_KEY,
-              },
             },
 
             '/auth-backend': {
