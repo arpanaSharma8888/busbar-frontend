@@ -7,7 +7,7 @@ export function apiUrl(path: string): string {
   const base = import.meta.env.VITE_API_BASE_URL;
   if (!base) throw new Error('VITE_API_BASE_URL is not configured');
   if (!path.startsWith('/') || path.startsWith('//')) throw new Error('API path must start with a single slash');
-  return `${base.replace(/\/$/, '')}${path}`;
+  return `${base.replace(/\/$/, '')}${path.replace(/^\/api\//, '/api/read/')}`;
 }
 
 export async function loginRequest(credentials: LoginCredentials, signal: AbortSignal): Promise<Session> {
