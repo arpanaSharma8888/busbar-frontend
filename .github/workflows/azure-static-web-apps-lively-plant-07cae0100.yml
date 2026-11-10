@@ -27,8 +27,8 @@ jobs:
 
         env:
           VITE_AUTH_API_BASE_URL: "https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net"
-          AZURE_READ_API_URL: "https://busbar-read-api-dev-d3andngneugdakdu.centralindia-01.azurewebsites.net"
-          VITE_API_BASE_URL: "/backend"
+          # The Vite /backend proxy only runs locally, not on Static Web Apps.
+          VITE_API_BASE_URL: "https://busbar-read-api-dev-d3andngneugdakdu.centralindia-01.azurewebsites.net"
 
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_PLANT_07CAE0100 }}
