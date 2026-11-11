@@ -69,13 +69,16 @@ export default function MacIdManagement() {
     }
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
+  const timer = setTimeout(() => {
     void load();
+  }, 0);
 
-    return () => {
-      request.current?.abort();
-    };
-  }, [load]);
+  return () => {
+    clearTimeout(timer);
+    request.current?.abort();
+  };
+}, [load]);
 
   const closeModal = () => {
     if (saving) return;

@@ -108,3 +108,21 @@ export async function registerDevice(
 
   return result;
 }
+
+
+export async function updateDeviceStatus(
+  deviceId: string,
+  status: 'active' | 'disabled'
+): Promise<void> {
+  const result = await deviceRequest<{
+    success: boolean;
+  }>('/api/updateDevice', {
+    method: 'PATCH',
+    body: JSON.stringify({ deviceId, status }),
+  });
+
+  if (!result?.success) {
+    throw new Error('Unable to update device status.');
+  }
+}
+
