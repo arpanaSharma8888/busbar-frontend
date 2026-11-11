@@ -70,7 +70,7 @@ export default function TabularData() {
       const text = String(value ?? '');
       return '"' + (/^[=+@\-\t\r]/.test(text) ? "'" + text : text).replace(/"/g, '""') + '"';
     };
-    const csv = [['Device ID', 'MAC address', 'Received at', 'Voltage (V)'], ...rows.map(row => [row.deviceId, row.macId, row.receivedAt, row.voltage])]
+    const csv = [['Device ID', 'MAC address', 'Received at', 'Voltage (mV)'], ...rows.map(row => [row.deviceId, row.macId, row.receivedAt, row.voltage])]
       .map(row => row.map(cell).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a');
@@ -96,7 +96,7 @@ export default function TabularData() {
     <Paper withBorder p="md" radius="md" aria-busy={loading}>
       <Group justify="space-between" mb="md"><Text size="sm" fw={600}>Readings</Text><Text size="xs" c="dimmed">{loadedRange || 'Last 24 hours'}</Text></Group>
       <Table.ScrollContainer minWidth={650}><Table striped highlightOnHover>
-        <Table.Thead><Table.Tr>{['Device', 'MAC address', 'Date & time', 'Voltage (V)'].map(label => <Table.Th key={label}>{label}</Table.Th>)}</Table.Tr></Table.Thead>
+        <Table.Thead><Table.Tr>{['Device', 'MAC address', 'Date & time', 'Voltage (mV)'].map(label => <Table.Th key={label}>{label}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>
           {visible.map((row, index) => <Table.Tr key={`${row.deviceId}-${row.receivedAt}-${index}`}><Table.Td>{row.deviceId}</Table.Td><Table.Td>{row.macId || '--'}</Table.Td><Table.Td>{new Date(row.receivedAt).toLocaleString()}</Table.Td><Table.Td>{Number(row.voltage).toFixed(3)}</Table.Td></Table.Tr>)}
           {!visible.length && <Table.Tr><Table.Td colSpan={4}><Text ta="center" py="xl" c="dimmed">{loading ? 'Loading voltage records...' : error ? 'Records could not be loaded. Check the error above and retry.' : !devices.length ? 'No devices available.' : 'No readings found for this period. Try an earlier date range.'}</Text></Table.Td></Table.Tr>}

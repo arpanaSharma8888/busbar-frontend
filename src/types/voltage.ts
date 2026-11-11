@@ -2,6 +2,7 @@
 export interface VoltageReading {
   deviceId: string;
   macId: string;
+  /** Voltage in millivolts (mV). */
   voltage: number;
   timestring: string;
   receivedAt: string;

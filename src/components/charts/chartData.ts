@@ -9,7 +9,7 @@ export function chartPoints(readings: { voltage: number; receivedAt: string }[])
 }
 
 export function voltageRange(min: number, max: number): [number, number] {
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 10];
   const padding = Math.max((max - min) * 0.15, Math.abs(max) * 0.005, 0.01);
-  return [min - padding, max + padding];
+  return [min < 0 ? min - padding : 0, max > 10 ? max + padding : 10];
 }

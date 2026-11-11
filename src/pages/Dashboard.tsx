@@ -70,7 +70,7 @@ export default function Dashboard() {
           return <Card key={device.deviceId} withBorder padding="sm" radius="md" className={`device-card ${selected ? 'device-card-selected' : ''}`}>
             <Stack gap={6}>
               <Group justify="space-between"><Text size="sm" fw={600} truncate title={`Device ${device.deviceId}`}>Device {device.deviceId}</Text><Badge size="xs" color={state?.error ? 'red' : 'gray'} variant="light">{state?.error ? 'Unavailable' : !state ? 'Loading' : reading ? 'Available' : 'No data'}</Badge></Group>
-              <Group gap="xs" className="device-voltage"><Zap size={16} /><Title order={2}>{!state ? <Loader size="sm" /> : reading ? <NumberFormatter value={reading.voltage} decimalScale={3} suffix=" V" fixedDecimalScale /> : '--'}</Title></Group>
+              <Group gap="xs" className="device-voltage"><Zap size={16} /><Title order={2}>{!state ? <Loader size="sm" /> : reading ? <NumberFormatter value={reading.voltage} decimalScale={3} suffix=" mV" fixedDecimalScale /> : '--'}</Title></Group>
               <Text size="xs" c="dimmed" truncate>MAC: {reading?.macId ?? device.macId ?? '--'}</Text>
               <Text size="xs" c="dimmed">{reading?.receivedAt ? new Date(reading.receivedAt).toLocaleString() : 'Awaiting first reading'}</Text>
               {state?.error && <Alert color="red" title="Unable to refresh">{state.error}</Alert>}
