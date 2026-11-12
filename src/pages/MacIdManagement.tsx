@@ -19,6 +19,7 @@ import { Copy, Plus, RefreshCw, Search } from 'lucide-react';
 import {
   getRegisteredDevices,
   registerDevice,
+  updateDeviceStatus,
   type RegisteredDevice,
 } from '../services/deviceManagementApi';
 
@@ -36,6 +37,28 @@ export default function MacIdManagement() {
 
   const [generatedSecret, setGeneratedSecret] = useState('');
   const [registeredId, setRegisteredId] = useState('');
+  const [updatingDeviceId, setUpdatingDeviceId] = useState<string | null>(null);
+
+const handleStatusChange = async (device: RegisteredDevice) => {
+  const nextStatus =
+    device.status === 'active' ? 'disabled' : 'active';
+
+  setUpdatingDeviceId(device.deviceId);
+  setError('');
+
+  try {
+    await updateDeviceStatus(device.deviceId, nextStatus);
+    await load();
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Unable to update device status.'
+    );
+  } finally {
+    setUpdatingDeviceId(null);
+  }
+};
 
   const request = useRef<AbortController | null>(null);
 
@@ -188,6 +211,7 @@ export default function MacIdManagement() {
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Credential Version</Table.Th>
                 <Table.Th>Registered At</Table.Th>
+                <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
 
@@ -223,12 +247,24 @@ export default function MacIdManagement() {
                       ? new Date(device.createdAt).toLocaleString()
                       : '-'}
                   </Table.Td>
+                  <Table.Td>
+  <Button
+    size="xs"
+    variant="light"
+    color={device.status === 'active' ? 'red' : 'green'}
+    loading={updatingDeviceId === device.deviceId}
+    disabled={updatingDeviceId !== null}
+    onClick={() => void handleStatusChange(device)}
+  >
+    {device.status === 'active' ? 'Disable' : 'Activate'}
+  </Button>
+</Table.Td>
                 </Table.Tr>
               ))}
 
               {!filtered.length && (
                 <Table.Tr>
-                  <Table.Td colSpan={5}>
+                  <Table.Td colSpan={6}>
                     <Text ta="center" c="dimmed" py="xl">
                       {loading
                         ? 'Loading devices...'
