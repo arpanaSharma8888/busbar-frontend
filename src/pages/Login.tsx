@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Alert, Button, Center, Checkbox, Paper, PasswordInput, Stack, Text, TextInput, ThemeIcon, Title } from '@mantine/core';
 import { Zap } from 'lucide-react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearLoginError, login } from '../store/userSlice';
 
@@ -38,6 +38,7 @@ export default function Login() {
             <PasswordInput label="Password" placeholder="Enter your password" autoComplete="current-password" required value={password} disabled={status === 'loading'} onChange={event => { setPassword(event.currentTarget.value); dispatch(clearLoginError()); }} />
             <Checkbox label="Remember me on this device" checked={remember} onChange={event => setRemember(event.currentTarget.checked)} disabled={status === 'loading'} />
             <Button type="submit" loading={status === 'loading'} disabled={!username.trim() || !password}>Sign in</Button>
+            <Text size="sm">New user? <Link to="/signup">Create an account</Link></Text>
             <Text size="xs" c="dimmed">Forgot your password? Contact your administrator.</Text>
           </Stack>
         </form>

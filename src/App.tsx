@@ -4,6 +4,8 @@ import AppLayout from './components/AppLayout';
 import RequireAuth from './components/RequireAuth';
 
 import Login from './pages/Login';
+import Signup from './pages/Signup';
+import RequireRole from './components/RequireRole';
 import Dashboard from './pages/Dashboard';
 import RealtimeGraph from './pages/RealtimeGraph';
 import HistoricalGraph from './pages/HistoricalGraph';
@@ -16,6 +18,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
         <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
@@ -23,7 +26,9 @@ export default function App() {
           <Route path="/realtime" element={<RealtimeGraph />} />
           <Route path="/historical" element={<HistoricalGraph />} />
           <Route path="/records" element={<TabularData />} />
-          <Route path="/mac-ids" element={<MacIdManagement />} />
+          <Route element={<RequireRole role="admin" />}>
+            <Route path="/mac-ids" element={<MacIdManagement />} />
+          </Route>
           <Route path="/profile" element={<EditProfile />} />
         </Route>
         </Route>

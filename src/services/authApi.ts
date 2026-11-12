@@ -105,3 +105,15 @@ export async function changePasswordRequest(session: Session, currentPassword: s
   }
   if (data?.success !== true) throw new Error('The server did not confirm the password change.');
 }
+
+export async function signupRequest(details: { username: string; name: string; password: string }): Promise<void> {
+  const response = await fetch(authUrl('/api/signup'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ username: details.username.trim(), name: details.name.trim(), password: details.password }),
+    cache: 'no-store', redirect: 'error',
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(typeof data?.message === 'string' ? data.message : 'Unable to create account.');
+  if (data?.success !== true) throw new Error('The server did not confirm registration.');
+}
