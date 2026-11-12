@@ -126,3 +126,21 @@ export async function updateDeviceStatus(
   }
 }
 
+
+export interface DeviceRotationResponse {
+  success: boolean;
+  deviceId: string;
+  credentialVersion: number;
+  deviceSecret: string;
+}
+
+export async function rotateDeviceSecret(deviceId: string): Promise<DeviceRotationResponse> {
+  const result = await deviceRequest<DeviceRotationResponse>('/api/rotateDeviceSecret', {
+    method: 'POST',
+    body: JSON.stringify({ deviceId }),
+  });
+  if (!result?.success || typeof result.deviceSecret !== 'string') {
+    throw new Error('Invalid device rotation response.');
+  }
+  return result;
+}

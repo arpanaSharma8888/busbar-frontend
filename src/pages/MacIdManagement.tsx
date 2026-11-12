@@ -15,11 +15,12 @@ import {
   Title,
   CopyButton,
 } from '@mantine/core';
-import { Copy, Plus, RefreshCw, Search } from 'lucide-react';
+import { Copy, Plus, RefreshCw, Search, KeyRound } from 'lucide-react';
 import {
   getRegisteredDevices,
   registerDevice,
   updateDeviceStatus,
+  rotateDeviceSecret,
   type RegisteredDevice,
 } from '../services/deviceManagementApi';
 
@@ -38,6 +39,36 @@ export default function MacIdManagement() {
   const [generatedSecret, setGeneratedSecret] = useState('');
   const [registeredId, setRegisteredId] = useState('');
   const [updatingDeviceId, setUpdatingDeviceId] = useState<string | null>(null);
+  const [rotationTarget, setRotationTarget] = useState<RegisteredDevice | null>(null);
+  const [rotating, setRotating] = useState(false);
+  const [rotationError, setRotationError] = useState('');
+  const [rotatedSecret, setRotatedSecret] = useState('');
+  const [rotatedVersion, setRotatedVersion] = useState<number | null>(null);
+
+  const closeRotation = () => {
+    if (rotating) return;
+    setRotationTarget(null);
+    setRotatedSecret('');
+    setRotatedVersion(null);
+    setRotationError('');
+  };
+
+  const handleRotate = async () => {
+    if (!rotationTarget || rotating || rotatedSecret) return;
+    setRotating(true);
+    setRotationError('');
+    try {
+      const result = await rotateDeviceSecret(rotationTarget.deviceId);
+      setRotatedSecret(result.deviceSecret);
+      setRotatedVersion(result.credentialVersion);
+      // Refresh failure must not hide the one-time secret.
+      try { await load(); } catch { /* keep secret visible */ }
+    } catch (err) {
+      setRotationError(err instanceof Error ? err.message : 'Unable to rotate device secret.');
+    } finally {
+      setRotating(false);
+    }
+  };
 
 const handleStatusChange = async (device: RegisteredDevice) => {
   const nextStatus =
@@ -248,6 +279,16 @@ const handleStatusChange = async (device: RegisteredDevice) => {
                       : '-'}
                   </Table.Td>
                   <Table.Td>
+  <Group gap="xs" wrap="nowrap">
+  <Button
+    size="xs"
+    variant="light"
+    leftSection={<KeyRound size={14} />}
+    disabled={updatingDeviceId !== null}
+    onClick={() => { setRotationTarget(device); setRotationError(''); }}
+  >
+    Regenerate Secret
+  </Button>
   <Button
     size="xs"
     variant="light"
@@ -258,6 +299,7 @@ const handleStatusChange = async (device: RegisteredDevice) => {
   >
     {device.status === 'active' ? 'Disable' : 'Activate'}
   </Button>
+  </Group>
 </Table.Td>
                 </Table.Tr>
               ))}
@@ -281,6 +323,54 @@ const handleStatusChange = async (device: RegisteredDevice) => {
           </Table>
         </Table.ScrollContainer>
       </Paper>
+
+      <Modal
+        opened={rotationTarget !== null}
+        onClose={closeRotation}
+        title="Regenerate Device Secret"
+        centered
+        closeOnEscape={!rotating}
+        closeOnClickOutside={false}
+        withCloseButton={!rotating}
+      >
+        <Stack gap="md">
+          {rotatedSecret ? (
+            <>
+              <Alert color="green" title="Secret rotated successfully">
+                Device {rotationTarget?.deviceId} now uses credential version {rotatedVersion}.
+                The previous HMAC secret is no longer valid.
+              </Alert>
+              <PasswordInput label="New Device Secret" value={rotatedSecret} readOnly />
+              <CopyButton value={rotatedSecret}>
+                {({ copied, copy }) => (
+                  <Button onClick={copy} leftSection={<Copy size={16} />}>
+                    {copied ? 'Copied' : 'Copy New Secret'}
+                  </Button>
+                )}
+              </CopyButton>
+              <Alert color="yellow">
+                Save this secret securely now. It will not be shown again after closing.
+              </Alert>
+              <Button variant="light" onClick={closeRotation}>Done</Button>
+            </>
+          ) : (
+            <>
+              <Text size="sm">
+                Rotate the secret for device <strong>{rotationTarget?.deviceId}</strong>?
+                Existing HMAC clients using its previous secret will immediately fail authentication.
+                Device identity and readings will remain unchanged.
+              </Text>
+              {rotationError && <Alert color="red">{rotationError}</Alert>}
+              <Group justify="flex-end">
+                <Button variant="default" disabled={rotating} onClick={closeRotation}>Cancel</Button>
+                <Button color="red" loading={rotating} onClick={() => void handleRotate()}>
+                  Confirm Rotation
+                </Button>
+              </Group>
+            </>
+          )}
+        </Stack>
+      </Modal>
 
       <Modal
         opened={opened}
