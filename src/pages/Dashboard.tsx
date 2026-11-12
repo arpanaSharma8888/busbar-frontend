@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Group, Loader, NumberFormatter, Paper, Stack, Tabs, Text, Title } from '@mantine/core';
 import { Activity, History, Zap, Radio, ArrowUpRight } from 'lucide-react';
-import { getAllDevices, getLatestVoltage } from '../services/voltageApi';
-import type { BusbarDevice } from '../services/voltageApi';
+import { getLatestVoltage } from '../services/voltageApi';
+import { listDashboardDevices, type DashboardDevice } from '../services/dashboardDevicesApi';
 import type { VoltageReading } from '../types/voltage';
 import DashboardGraph from '../components/charts/DashboardGraph';
 import './Dashboard.css';
@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState<string | null>('realtime');
   const [devices, setDevices] = useState<Record<string, DeviceState>>({});
 
-  const [deviceList, setDeviceList] = useState<BusbarDevice[]>([]);
+  const [deviceList, setDeviceList] = useState<DashboardDevice[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState('');
 
@@ -23,7 +23,7 @@ export default function Dashboard() {
     let timer: ReturnType<typeof setTimeout>;
     const load = async () => {
       try {
-        const available = await getAllDevices(controller.signal);
+        const available = await listDashboardDevices(controller.signal);
         if (controller.signal.aborted) return;
         setDeviceList(available);
         setDeviceId(current => available.some(device => device.deviceId === current) ? current : available[0]?.deviceId ?? '');
@@ -61,7 +61,7 @@ export default function Dashboard() {
       <section aria-label="Devices">
       {listLoading && <Group py="lg"><Loader size="sm" /><Text size="sm" c="dimmed">Loading devices...</Text></Group>}
       {listError && <Alert color="red" title="Unable to load devices" mb="md">{listError} Retrying automatically.</Alert>}
-      {!listLoading && !listError && !deviceList.length && <Paper className="dashboard-empty" withBorder><Radio size={30} strokeWidth={1.4} /><Title order={4} mt="md">No devices connected</Title></Paper>}
+      {!listLoading && !listError && !deviceList.length && <Paper className="dashboard-empty" withBorder><Radio size={30} strokeWidth={1.4} /><Title order={4} mt="md">No registered devices</Title></Paper>}
       <div className="device-strip">
         {deviceList.map(device => {
           const state = devices[device.deviceId];
@@ -69,11 +69,11 @@ export default function Dashboard() {
           const selected = deviceId === device.deviceId;
           return <Card key={device.deviceId} withBorder padding="sm" radius="md" className={`device-card ${selected ? 'device-card-selected' : ''}`}>
             <Stack gap={6}>
-              <Group justify="space-between"><Text size="sm" fw={600} truncate title={`Device ${device.deviceId}`}>Device {device.deviceId}</Text><Badge size="xs" color={state?.error ? 'red' : 'gray'} variant="light">{state?.error ? 'Unavailable' : !state ? 'Loading' : reading ? 'Available' : 'No data'}</Badge></Group>
+              <Group justify="space-between"><Text size="sm" fw={600} truncate title={`Device ${device.deviceId}`}>Device {device.deviceId}</Text><Badge size="xs" color={device.status === 'active' ? 'green' : device.status === 'disabled' ? 'red' : 'yellow'} variant="light">{device.status}</Badge></Group>
               <Group gap="xs" className="device-voltage"><Zap size={16} /><Title order={2}>{!state ? <Loader size="sm" /> : reading ? <NumberFormatter value={reading.voltage} decimalScale={3} suffix=" mV" fixedDecimalScale /> : '--'}</Title></Group>
               <Text size="xs" c="dimmed" truncate>MAC: {reading?.macId ?? device.macId ?? '--'}</Text>
-              <Text size="xs" c="dimmed">{reading?.receivedAt ? new Date(reading.receivedAt).toLocaleString() : 'Awaiting first reading'}</Text>
-              {state?.error && <Alert color="red" title="Unable to refresh">{state.error}</Alert>}
+              <Text size="xs" c="dimmed">{reading?.receivedAt ? `Last reading: ${new Date(reading.receivedAt).toLocaleString()}` : 'Awaiting first reading'}</Text>
+              {state?.error && <Text size="xs" c="red">{state.error}</Text>}
               <Button size="compact-xs" fullWidth justify="space-between" rightSection={<ArrowUpRight size={16} />} variant={selected ? 'light' : 'subtle'} aria-pressed={selected} onClick={() => setDeviceId(device.deviceId)}>{selected ? 'Selected' : 'View'}</Button>
             </Stack>
           </Card>;
