@@ -23,6 +23,7 @@ import {
   rotateDeviceSecret,
   type RegisteredDevice,
 } from '../services/deviceManagementApi';
+import UsbHelloTest from '../components/UsbHelloTest';
 
 export default function MacIdManagement() {
   const [search, setSearch] = useState('');
@@ -322,6 +323,7 @@ const handleStatusChange = async (device: RegisteredDevice) => {
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>
+        <UsbHelloTest />
       </Paper>
 
       <Modal
