@@ -70,6 +70,18 @@ export class UsbProvisioningSession {
     return { deviceId, macId };
   }
 
+  async eraseCancelledConfiguration(identity: Identity): Promise<void> {
+    // Mock-only recovery protocol. Production firmware must implement authenticated,
+    // verifiable credential erasure and must not expose this to unauthenticated users.
+    const challenge = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+      x => x.toString(16).padStart(2, '0')).join('');
+    await this.send({command:'ERASE_CONFIG', deviceId:identity.deviceId, macId:identity.macId, challenge});
+    const ack = await this.receive('ERASE_ACK', 10000);
+    if (ack.deviceId !== identity.deviceId || ack.macId !== identity.macId ||
+        ack.challenge !== challenge || ack.status !== 'ERASED')
+      throw new Error('Controller did not confirm configuration erasure');
+  }
+
   async provision(identity: Identity, tx: {transactionId:string; challenge:string; apimUrl:string; deviceSecret:string}): Promise<string> {
     if (!/^[A-Za-z0-9_-]{43}$/.test(tx.deviceSecret) || !/^[a-f0-9]{64}$/i.test(tx.challenge) ||
         !/^[0-9a-f-]{36}$/i.test(tx.transactionId) || tx.apimUrl !== APIM_VOLTAGE_URL) {

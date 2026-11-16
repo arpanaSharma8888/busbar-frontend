@@ -5,7 +5,9 @@ import { sessionExpired } from '../store/userSlice';
 export interface RegisteredDevice {
   deviceId: string;
   macId: string;
-  status: 'pending' | 'active' | 'disabled';
+  status: 'pending' | 'active' | 'disabled' | 'cancelled';
+  provisioningExpiresAt?: string;
+  provisioningState?: string;
   credentialVersion: number;
   createdAt: string;
 }
@@ -131,3 +133,17 @@ export async function updateDeviceStatus(
 }
 
 
+
+export async function retryCancelledProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
+  return deviceRequest<BeginProvisioningResponse>('/api/retryCancelledProvisioning', {
+    method: 'POST', body: JSON.stringify({ deviceId, macId, erasureConfirmed: true })
+  });
+}
+export interface ProvisioningHistoryRecord {
+  deviceId: string; transactionId: string; macId: string; status: string; createdAt: string; closedAt: string;
+}
+export async function getProvisioningHistory(): Promise<ProvisioningHistoryRecord[]> {
+  const result = await deviceRequest<{success:boolean;data:ProvisioningHistoryRecord[]}>('/api/getProvisioningHistory');
+  if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid provisioning history response');
+  return result.data;
+}
