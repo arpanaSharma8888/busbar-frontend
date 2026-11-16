@@ -3,12 +3,37 @@ import type { Session, User } from './session';
 
 export interface LoginCredentials { username: string; password: string; remember: boolean }
 
+
 export function apiUrl(path: string): string {
-  const base = import.meta.env.VITE_API_BASE_URL;
-  if (!base) throw new Error('VITE_API_BASE_URL is not configured');
-  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('API path must start with a single slash');
-  return `${base.replace(/\/$/, '')}${path.replace(/^\/api\//, '/api/read/')}`;
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    throw new Error('API path must start with a single slash');
+  }
+
+  // Device management endpoints use the Auth Function App.
+  const authEndpoints = new Set([
+    '/api/listDashboardDevices',
+  ]);
+
+  if (authEndpoints.has(path.split('?')[0])) {
+    const authBase = import.meta.env.VITE_AUTH_API_BASE_URL;
+
+    if (!authBase) {
+      throw new Error('VITE_AUTH_API_BASE_URL is not configured');
+    }
+
+    return `${authBase.replace(/\/$/, '')}${path}`;
+  }
+
+  // Preserve existing routing for voltage read APIs.
+  const readBase = import.meta.env.VITE_API_BASE_URL;
+
+  if (!readBase) {
+    throw new Error('VITE_API_BASE_URL is not configured');
+  }
+
+  return `${readBase.replace(/\/$/, '')}${path.replace(/^\/api\//, '/api/read/')}`;
 }
+
 
 export async function loginRequest(credentials: LoginCredentials, signal: AbortSignal): Promise<Session> {
   const response = await fetch(authUrl('/api/login'), {
