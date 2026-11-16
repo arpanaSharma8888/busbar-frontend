@@ -1,464 +1,130 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Modal,
-  Paper,
-  PasswordInput,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-  Title,
-  CopyButton,
-} from '@mantine/core';
-import { Copy, Plus, RefreshCw, Search, KeyRound } from 'lucide-react';
-import {
-  getRegisteredDevices,
-  registerDevice,
-  updateDeviceStatus,
-  rotateDeviceSecret,
-  type RegisteredDevice,
-} from '../services/deviceManagementApi';
-import UsbHelloTest from '../components/UsbHelloTest';
+import { Alert, Badge, Button, Group, Modal, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { Plug, RefreshCw, Search } from 'lucide-react';
+import { getRegisteredDevices, beginDeviceProvisioning, completeDeviceProvisioning, cancelDeviceProvisioning, updateDeviceStatus, type RegisteredDevice } from '../services/deviceManagementApi';
+import { UsbProvisioningSession, type Identity } from '../services/usbProvisioning';
 
+type WizardStage = 'idle' | 'connecting' | 'identified' | 'registering' | 'provisioning' | 'activating' | 'completed' | 'failed';
 export default function MacIdManagement() {
-  const [search, setSearch] = useState('');
   const [devices, setDevices] = useState<RegisteredDevice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const [opened, setOpened] = useState(false);
-  const [deviceId, setDeviceId] = useState('');
-  const [macId, setMacId] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
-
-  const [generatedSecret, setGeneratedSecret] = useState('');
-  const [registeredId, setRegisteredId] = useState('');
-  const [updatingDeviceId, setUpdatingDeviceId] = useState<string | null>(null);
-  const [rotationTarget, setRotationTarget] = useState<RegisteredDevice | null>(null);
-  const [rotating, setRotating] = useState(false);
-  const [rotationError, setRotationError] = useState('');
-  const [rotatedSecret, setRotatedSecret] = useState('');
-  const [rotatedVersion, setRotatedVersion] = useState<number | null>(null);
-
-  const closeRotation = () => {
-    if (rotating) return;
-    setRotationTarget(null);
-    setRotatedSecret('');
-    setRotatedVersion(null);
-    setRotationError('');
-  };
-
-  const handleRotate = async () => {
-    if (!rotationTarget || rotating || rotatedSecret) return;
-    setRotating(true);
-    setRotationError('');
-    try {
-      const result = await rotateDeviceSecret(rotationTarget.deviceId);
-      setRotatedSecret(result.deviceSecret);
-      setRotatedVersion(result.credentialVersion);
-      // Refresh failure must not hide the one-time secret.
-      try { await load(); } catch { /* keep secret visible */ }
-    } catch (err) {
-      setRotationError(err instanceof Error ? err.message : 'Unable to rotate device secret.');
-    } finally {
-      setRotating(false);
-    }
-  };
-
-const handleStatusChange = async (device: RegisteredDevice) => {
-  const nextStatus =
-    device.status === 'active' ? 'disabled' : 'active';
-
-  setUpdatingDeviceId(device.deviceId);
-  setError('');
-
-  try {
-    await updateDeviceStatus(device.deviceId, nextStatus);
-    await load();
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : 'Unable to update device status.'
-    );
-  } finally {
-    setUpdatingDeviceId(null);
-  }
-};
-
+  const [stage, setStage] = useState<WizardStage>('idle');
+  const [identity, setIdentity] = useState<Identity | null>(null);
+  const [wizardError, setWizardError] = useState('');
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false);
+  const [busyDevice, setBusyDevice] = useState<string | null>(null);
+  const session = useRef<UsbProvisioningSession | null>(null);
+  const mounted = useRef(true);
+  const operation = useRef(false);
+  const [isOperating, setIsOperating] = useState(false);
   const request = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
     request.current?.abort();
-
-    const controller = new AbortController();
-    request.current = controller;
-
+    const controller = new AbortController(); request.current = controller;
     setLoading(true);
-    setError('');
-
-    try {
-      const result = await getRegisteredDevices(controller.signal);
-
-      if (!controller.signal.aborted) {
-        setDevices(result);
-      }
-    } catch (err) {
-      if (!controller.signal.aborted) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load registered devices.'
-        );
-      }
-    } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
-      }
-    }
+    try { const result = await getRegisteredDevices(controller.signal); if (!controller.signal.aborted) { setDevices(result); setError(''); } }
+    catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : 'Unable to load devices'); }
+    finally { if (!controller.signal.aborted) setLoading(false); }
   }, []);
+  useEffect(() => {
+    mounted.current = true;
+    // Schedule the initial fetch after the effect, avoiding synchronous state updates.
+    queueMicrotask(() => { if (mounted.current) void load(); });
+    return () => { mounted.current = false; request.current?.abort(); void session.current?.close(); };
+  }, [load]);
 
- useEffect(() => {
-  const timer = setTimeout(() => {
-    void load();
-  }, 0);
-
-  return () => {
-    clearTimeout(timer);
-    request.current?.abort();
-  };
-}, [load]);
-
-  const closeModal = () => {
-    if (saving) return;
-
-    setOpened(false);
-    setDeviceId('');
-    setMacId('');
-    setFormError('');
-    setGeneratedSecret('');
-    setRegisteredId('');
-  };
-
-  const handleRegister = async () => {
-    const id = deviceId.trim().toUpperCase();
-    const mac = macId.trim().toUpperCase();
-
-    if (!/^[A-Z0-9_-]{1,64}$/.test(id)) {
-      setFormError('Enter a valid Device ID.');
-      return;
-    }
-
-    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(mac)) {
-      setFormError('Enter a valid MAC address, e.g. AA:BB:CC:DD:EE:01.');
-      return;
-    }
-
-    setSaving(true);
-    setFormError('');
-
+  const start = async () => {
+    if (operation.current) return;
+    operation.current = true; setIsOperating(true); setOpened(true); setStage('connecting'); setWizardError(''); setIdentity(null); setRecoveryNeeded(false);
+    const usb = new UsbProvisioningSession(); session.current = usb;
     try {
-      const result = await registerDevice(id, mac);
+      await usb.connect();
+      const found = await usb.hello();
+      if (!mounted.current) return;
+      setIdentity(found); setStage('identified');
+    } catch (e) {
+      setWizardError(e instanceof Error ? e.message : String(e)); setStage('failed');
+      await usb.close(); session.current = null;
+    } finally { operation.current = false; setIsOperating(false); }
+  };
 
-      setRegisteredId(result.device.deviceId);
-      setGeneratedSecret(result.deviceSecret);
-
+  const registerAndProvision = async () => {
+    if (!identity || !session.current || operation.current) return;
+    operation.current = true; setIsOperating(true);
+    let transactionId: string | null = null;
+    let activated = false;
+    try {
+      const existing = await getRegisteredDevices();
+      if (existing.some(d => d.deviceId === identity.deviceId || d.macId.toUpperCase() === identity.macId))
+        throw new Error('This controller identity already exists. Use a controlled recovery workflow; do not create another registration.');
+      setStage('registering');
+      const tx = await beginDeviceProvisioning(identity.deviceId, identity.macId);
+      transactionId = tx.transactionId;
+      if (tx.deviceId !== identity.deviceId || tx.macId !== identity.macId)
+        throw new Error('Azure returned an unexpected controller identity.');
+      setStage('provisioning');
+      const proof = await session.current.provision(identity, tx);
+      setStage('activating');
+      await completeDeviceProvisioning(identity.deviceId, tx.transactionId, proof);
+      activated = true;
+      setStage('completed');
       await load();
-    } catch (err) {
-      setFormError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to register device.'
-      );
+    } catch (e) {
+      let message = e instanceof Error ? e.message : 'Provisioning failed';
+      if (transactionId && !activated) {
+        try {
+          await cancelDeviceProvisioning(identity.deviceId, transactionId);
+          message += ' The Azure attempt was cancelled. The controller may still retain credentials: erase them securely before any retry.';
+        } catch {
+          message += ' Azure cancellation could not be confirmed. The record may remain pending or may have activated if the completion response was lost. Check Azure before retrying.';
+        }
+      }
+      setRecoveryNeeded(!!transactionId);
+      setWizardError(message);
+      setStage('failed');
+      void load();
     } finally {
-      setSaving(false);
+      await session.current?.close(); session.current = null;
+      operation.current = false; setIsOperating(false);
     }
   };
 
-  const query = search.trim().toLowerCase();
+  const closeWizard = async () => {
+    if (operation.current) return;
+    await session.current?.close(); session.current = null;
+    setOpened(false); setIdentity(null); setStage('idle'); setWizardError(''); setRecoveryNeeded(false);
+  };
 
-  const filtered = devices.filter(
-    device =>
-      device.deviceId.toLowerCase().includes(query) ||
-      (device.macId ?? '').toLowerCase().includes(query)
-  );
-
-  return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={2}>MAC ID Management</Title>
-
-        <Group>
-          <Badge variant="light">
-            {devices.length} registered devices
-          </Badge>
-
-          <Button
-            leftSection={<Plus size={16} />}
-            onClick={() => setOpened(true)}
-          >
-            Register Device
-          </Button>
-        </Group>
-      </Group>
-
-      {error && (
-        <Alert color="red" title="Unable to refresh devices">
-          {error}
-        </Alert>
-      )}
-
-      <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb="md">
-          <TextInput
-            label="Search devices"
-            placeholder="Device ID or MAC address"
-            leftSection={<Search size={16} />}
-            value={search}
-            onChange={event => setSearch(event.currentTarget.value)}
-          />
-
-          <Button
-            variant="light"
-            leftSection={<RefreshCw size={16} />}
-            loading={loading}
-            onClick={() => void load()}
-          >
-            Refresh
-          </Button>
-        </Group>
-
-        <Table.ScrollContainer minWidth={600}>
-          <Table striped highlightOnHover verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Device ID</Table.Th>
-                <Table.Th>MAC Address</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Credential Version</Table.Th>
-                <Table.Th>Registered At</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-
-            <Table.Tbody>
-              {filtered.map(device => (
-                <Table.Tr key={device.deviceId}>
-                  <Table.Td>{device.deviceId}</Table.Td>
-
-                  <Table.Td>
-                    <Text size="sm" ff="monospace">
-                      {device.macId}
-                    </Text>
-                  </Table.Td>
-
-                  <Table.Td>
-                    <Badge
-                      color={
-                        device.status === 'active'
-                          ? 'green'
-                          : device.status === 'disabled'
-                          ? 'red'
-                          : 'yellow'
-                      }
-                    >
-                      {device.status}
-                    </Badge>
-                  </Table.Td>
-
-                  <Table.Td>{device.credentialVersion}</Table.Td>
-
-                  <Table.Td>
-                    {device.createdAt
-                      ? new Date(device.createdAt).toLocaleString()
-                      : '-'}
-                  </Table.Td>
-                  <Table.Td>
-  <Group gap="xs" wrap="nowrap">
-  <Button
-    size="xs"
-    variant="light"
-    leftSection={<KeyRound size={14} />}
-    disabled={updatingDeviceId !== null}
-    onClick={() => { setRotationTarget(device); setRotationError(''); }}
-  >
-    Regenerate Secret
-  </Button>
-  <Button
-    size="xs"
-    variant="light"
-    color={device.status === 'active' ? 'red' : 'green'}
-    loading={updatingDeviceId === device.deviceId}
-    disabled={updatingDeviceId !== null}
-    onClick={() => void handleStatusChange(device)}
-  >
-    {device.status === 'active' ? 'Disable' : 'Activate'}
-  </Button>
-  </Group>
-</Table.Td>
-                </Table.Tr>
-              ))}
-
-              {!filtered.length && (
-                <Table.Tr>
-                  <Table.Td colSpan={6}>
-                    <Text ta="center" c="dimmed" py="xl">
-                      {loading
-                        ? 'Loading devices...'
-                        : error && !devices.length
-                        ? 'Unable to load devices.'
-                        : devices.length
-                        ? 'No devices match your search.'
-                        : 'No registered devices yet.'}
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              )}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-        <UsbHelloTest />
-      </Paper>
-
-      <Modal
-        opened={rotationTarget !== null}
-        onClose={closeRotation}
-        title="Regenerate Device Secret"
-        centered
-        closeOnEscape={!rotating}
-        closeOnClickOutside={false}
-        withCloseButton={!rotating}
-      >
-        <Stack gap="md">
-          {rotatedSecret ? (
-            <>
-              <Alert color="green" title="Secret rotated successfully">
-                Device {rotationTarget?.deviceId} now uses credential version {rotatedVersion}.
-                The previous HMAC secret is no longer valid.
-              </Alert>
-              <PasswordInput label="New Device Secret" value={rotatedSecret} readOnly />
-              <CopyButton value={rotatedSecret}>
-                {({ copied, copy }) => (
-                  <Button onClick={copy} leftSection={<Copy size={16} />}>
-                    {copied ? 'Copied' : 'Copy New Secret'}
-                  </Button>
-                )}
-              </CopyButton>
-              <Alert color="yellow">
-                Save this secret securely now. It will not be shown again after closing.
-              </Alert>
-              <Button variant="light" onClick={closeRotation}>Done</Button>
-            </>
-          ) : (
-            <>
-              <Text size="sm">
-                Rotate the secret for device <strong>{rotationTarget?.deviceId}</strong>?
-                Existing HMAC clients using its previous secret will immediately fail authentication.
-                Device identity and readings will remain unchanged.
-              </Text>
-              {rotationError && <Alert color="red">{rotationError}</Alert>}
-              <Group justify="flex-end">
-                <Button variant="default" disabled={rotating} onClick={closeRotation}>Cancel</Button>
-                <Button color="red" loading={rotating} onClick={() => void handleRotate()}>
-                  Confirm Rotation
-                </Button>
-              </Group>
-            </>
-          )}
-        </Stack>
-      </Modal>
-
-      <Modal
-        opened={opened}
-        onClose={closeModal}
-        title="Register New Controller"
-        centered
-        closeOnEscape={!saving}
-        closeOnClickOutside={false}
-        withCloseButton={!saving}
-      >
-        <Stack gap="md">
-          {!generatedSecret ? (
-            <>
-              <TextInput
-                label="Device ID"
-                placeholder="BUSBAR-001"
-                required
-                value={deviceId}
-                onChange={event => setDeviceId(event.currentTarget.value)}
-                disabled={saving}
-              />
-
-              <TextInput
-                label="MAC Address"
-                placeholder="AA:BB:CC:DD:EE:01"
-                required
-                value={macId}
-                onChange={event => setMacId(event.currentTarget.value)}
-                disabled={saving}
-              />
-
-              {formError && (
-                <Alert color="red">{formError}</Alert>
-              )}
-
-              <Button
-                fullWidth
-                loading={saving}
-                onClick={() => void handleRegister()}
-              >
-                Register Controller
-              </Button>
-            </>
-          ) : (
-            <>
-              <Alert color="green" title="Controller Registered">
-                {registeredId} has been registered successfully.
-              </Alert>
-
-              <Text size="sm" fw={500}>
-                Generated Device Secret
-              </Text>
-
-              <PasswordInput
-                value={generatedSecret}
-                readOnly
-                visibilityToggleButtonProps={{
-                  'aria-label': 'Show or hide device secret',
-                }}
-              />
-
-              <CopyButton value={generatedSecret}>
-                {({ copied, copy }) => (
-                  <Button
-                    variant="light"
-                    leftSection={<Copy size={16} />}
-                    onClick={copy}
-                  >
-                    {copied ? 'Copied' : 'Copy Device Secret'}
-                  </Button>
-                )}
-              </CopyButton>
-
-              <Alert color="yellow">
-                Save this secret securely. It will not be displayed again
-                after closing this window. Treat copied clipboard data
-                as sensitive.
-              </Alert>
-
-              <Button onClick={closeModal}>
-                Done
-              </Button>
-            </>
-          )}
-        </Stack>
-      </Modal>
-    </Stack>
-  );
+  const changeStatus = async (device: RegisteredDevice) => {
+    setBusyDevice(device.deviceId);
+    try { await updateDeviceStatus(device.deviceId, device.status === 'active' ? 'disabled' : 'active'); await load(); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Status update failed'); }
+    finally { setBusyDevice(null); }
+  };
+  const filtered = devices.filter(d => (d.deviceId + ' ' + d.macId).toLowerCase().includes(search.trim().toLowerCase()));
+  return <Stack gap="md">
+    <Group justify="space-between"><Title order={2}>Device Management</Title><Button leftSection={<Plug size={16}/>} onClick={() => void start()} disabled={opened}>Register Controller via USB</Button></Group>
+    {error && <Alert color="red">{error}</Alert>}
+    <Paper withBorder p="md" radius="md"><Stack>
+      <Group justify="space-between"><TextInput label="Search devices" placeholder="Device ID or MAC address" leftSection={<Search size={16}/>} value={search} onChange={e => setSearch(e.currentTarget.value)}/><Button variant="light" leftSection={<RefreshCw size={16}/>} loading={loading} onClick={() => void load()}>Refresh</Button></Group>
+      <Table.ScrollContainer minWidth={700}><Table striped highlightOnHover><Table.Thead><Table.Tr><Table.Th>Device ID</Table.Th><Table.Th>MAC Address</Table.Th><Table.Th>Status</Table.Th><Table.Th>Version</Table.Th><Table.Th>Registered</Table.Th><Table.Th>Actions</Table.Th></Table.Tr></Table.Thead>
+      <Table.Tbody>{filtered.map(d => <Table.Tr key={d.deviceId}><Table.Td>{d.deviceId}</Table.Td><Table.Td>{d.macId}</Table.Td><Table.Td><Badge color={d.status === 'active' ? 'green' : d.status === 'disabled' ? 'red' : 'yellow'}>{d.status}</Badge></Table.Td><Table.Td>{d.credentialVersion}</Table.Td><Table.Td>{d.createdAt ? new Date(d.createdAt).toLocaleString() : '-'}</Table.Td><Table.Td><Group gap="xs"><Button size="xs" variant="light" disabled={busyDevice !== null || (d.status !== 'active' && d.status !== 'disabled')} loading={busyDevice === d.deviceId} onClick={() => void changeStatus(d)}>{d.status === 'active' ? 'Disable' : 'Activate'}</Button></Group></Table.Td></Table.Tr>)}
+      {!filtered.length && <Table.Tr><Table.Td colSpan={6}><Text ta="center" c="dimmed">No matching devices</Text></Table.Td></Table.Tr>}</Table.Tbody></Table></Table.ScrollContainer>
+    </Stack></Paper>
+    <Modal opened={opened} onClose={() => void closeWizard()} title="USB Controller Registration" closeOnEscape={!isOperating} closeOnClickOutside={false} withCloseButton={!isOperating} centered><Stack>
+      <Text size="sm" c="dimmed">Connect the test adapter to COM3. Close Docklight on COM3 before selecting the port. Mock controller listens on COM4 at 9600 8N1.</Text>
+      <Text>Stage: <strong>{stage}</strong></Text>
+      {identity && <Paper withBorder p="sm"><Text>Device ID: <strong>{identity.deviceId}</strong></Text><Text>MAC ID: <strong>{identity.macId}</strong></Text></Paper>}
+      {wizardError && <Alert color="red" title={recoveryNeeded ? 'Provisioning incomplete' : 'Unable to continue'}>{wizardError}</Alert>}
+      {stage === 'completed' && <Alert color="green" title="Controller activated">The controller proved possession of the stored credential and Azure status is active. You can disconnect USB.</Alert>}
+      {stage === 'identified' && <Button onClick={() => void registerAndProvision()}>Register &amp; Provision Controller</Button>}
+      {['connecting','registering','provisioning','activating'].includes(stage) && <Button loading disabled>Working...</Button>}
+      {stage === 'failed' && !recoveryNeeded && <Button variant="light" onClick={() => void start()}>Reconnect &amp; Retry HELLO</Button>}
+      <Button variant="subtle" disabled={isOperating} onClick={() => void closeWizard()}>Close</Button>
+    </Stack></Modal>
+  </Stack>;
 }

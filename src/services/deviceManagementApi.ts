@@ -86,29 +86,33 @@ export async function getRegisteredDevices(
   return result.data;
 }
 
-export async function registerDevice(
-  deviceId: string,
-  macId: string
-): Promise<DeviceRegistrationResponse> {
-  const result = await deviceRequest<DeviceRegistrationResponse>(
-    '/api/registerDevice',
-    {
-      method: 'POST',
-      body: JSON.stringify({ deviceId, macId }),
-    }
-  );
-
-  if (
-    !result?.success ||
-    !result.device ||
-    typeof result.deviceSecret !== 'string'
-  ) {
-    throw new Error('Invalid device registration response.');
-  }
-
-  return result;
+export interface BeginProvisioningResponse {
+  success: true;
+  deviceId: string;
+  macId: string;
+  transactionId: string;
+  challenge: string;
+  expiresAt: string;
+  apimUrl: string;
+  deviceSecret: string;
 }
-
+export async function beginDeviceProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
+  return deviceRequest<BeginProvisioningResponse>('/api/beginDeviceProvisioning', {
+    method: 'POST', body: JSON.stringify({ deviceId, macId })
+  });
+}
+export async function completeDeviceProvisioning(deviceId: string, transactionId: string, proof: string): Promise<void> {
+  const result = await deviceRequest<{success:boolean}>('/api/completeDeviceProvisioning', {
+    method: 'POST', body: JSON.stringify({ deviceId, transactionId, proof })
+  });
+  if (!result.success) throw new Error('Provisioning could not be completed.');
+}
+export async function cancelDeviceProvisioning(deviceId: string, transactionId: string): Promise<void> {
+  const result = await deviceRequest<{success:boolean}>('/api/cancelDeviceProvisioning', {
+    method: 'POST', body: JSON.stringify({ deviceId, transactionId })
+  });
+  if (!result.success) throw new Error('Unable to cancel provisioning.');
+}
 
 export async function updateDeviceStatus(
   deviceId: string,
@@ -127,20 +131,3 @@ export async function updateDeviceStatus(
 }
 
 
-export interface DeviceRotationResponse {
-  success: boolean;
-  deviceId: string;
-  credentialVersion: number;
-  deviceSecret: string;
-}
-
-export async function rotateDeviceSecret(deviceId: string): Promise<DeviceRotationResponse> {
-  const result = await deviceRequest<DeviceRotationResponse>('/api/rotateDeviceSecret', {
-    method: 'POST',
-    body: JSON.stringify({ deviceId }),
-  });
-  if (!result?.success || typeof result.deviceSecret !== 'string') {
-    throw new Error('Invalid device rotation response.');
-  }
-  return result;
-}
