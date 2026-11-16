@@ -62,13 +62,13 @@ export interface BusbarDevice {
 }
 
 export async function getAllDevices(signal?: AbortSignal): Promise<BusbarDevice[]> {
-  const response = await authenticatedFetch('/api/getAllDevices', { signal });
+  const response = await authenticatedFetch('/api/listDashboardDevices', { signal });
   if (!response.ok) throw new Error(`Unable to fetch devices: ${response.status}`);
-  const result = await readVoltageJson<{ success: boolean; data: BusbarDevice[] }>(response);
+  const result = await readVoltageJson<{ success: boolean; data: (BusbarDevice & { status: string })[] }>(response);
   if (!result.success || !Array.isArray(result.data) || result.data.some(device =>
     !device || typeof device.deviceId !== 'string' || !device.deviceId.trim()
     || (device.macId !== null && typeof device.macId !== 'string'))) {
     throw new Error('Invalid device response');
   }
-  return [...new Map(result.data.map(device => [device.deviceId, device])).values()];
+  return [...new Map(result.data.filter(device => device.status === 'active').map(device => [device.deviceId, { deviceId: device.deviceId, macId: device.macId }])).values()];
 }
