@@ -130,11 +130,11 @@ export default function MacIdManagement() {
 
     </Stack></Paper>
     <Modal opened={opened} onClose={() => void closeWizard()} title="USB Controller Registration" closeOnEscape={!isOperating} closeOnClickOutside={false} withCloseButton={!isOperating} centered><Stack>
-      <Text size="sm" c="dimmed">Connect the test adapter to COM3. Close Docklight on COM3 before selecting the port. Mock controller listens on COM4 at 9600 8N1.</Text>
+      <Text size="sm" c="dimmed">Connect the USB controller at 9600 8N1 (BCPP v1 binary). For COM3/COM4 mock testing, the mock listens on COM4. Device IDs must be numeric uint32 values.</Text>
       <Text>Stage: <strong>{stage}</strong></Text>
       {identity && <Paper withBorder p="sm"><Text>Device ID: <strong>{identity.deviceId}</strong></Text><Text>MAC ID: <strong>{identity.macId}</strong></Text></Paper>}
       {wizardError && <Alert color="red" title={recoveryNeeded ? 'Provisioning incomplete' : 'Unable to continue'}>{wizardError}</Alert>}
-      {recoveryMode && <Text size="xs" c="dimmed">Cancelled identity recovered through USB; previous attempt archived.</Text>}
+      {recoveryMode && <Text size="xs" c="dimmed">Recovery requires a firmware-approved authenticated erasure operation; it is not yet available in the four-packet protocol.</Text>}
       {stage === 'completed' && <Alert color="green" title="Controller activated">The controller proved possession of the stored credential and Azure status is active. You can disconnect USB.</Alert>}
       {stage === 'identified' && <Button onClick={() => void registerAndProvision()}>Register / Recover &amp; Provision Controller</Button>}
       {['connecting','registering','provisioning','activating'].includes(stage) && <Button loading disabled>Working...</Button>}
