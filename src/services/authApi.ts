@@ -15,17 +15,11 @@ export function apiUrl(path: string): string {
   ]);
 
   if (authEndpoints.has(path.split('?')[0])) {
-    const authBase = import.meta.env.VITE_AUTH_API_BASE_URL;
-
-    if (!authBase) {
-      throw new Error('VITE_AUTH_API_BASE_URL is not configured');
-    }
-
-    return `${authBase.replace(/\/$/, '')}${path}`;
+    return authUrl(path);
   }
 
-  // Preserve existing routing for voltage read APIs.
-  const readBase = import.meta.env.VITE_API_BASE_URL;
+  // Vite forwards local voltage requests to the Auth Function App's read proxy.
+  const readBase = import.meta.env.DEV ? '/backend' : import.meta.env.VITE_API_BASE_URL;
 
   if (!readBase) {
     throw new Error('VITE_API_BASE_URL is not configured');
@@ -65,7 +59,9 @@ export async function loginRequest(credentials: LoginCredentials, signal: AbortS
 }
 
 
-function authUrl(path: string): string {
+export function authUrl(path: string): string {
+  if (import.meta.env.DEV) return `/auth-backend${path}`;
+
   const base = import.meta.env.VITE_AUTH_API_BASE_URL;
 
   if (!base) {

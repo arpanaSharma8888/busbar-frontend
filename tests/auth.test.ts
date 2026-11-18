@@ -46,6 +46,32 @@ test('remember me persists and restores a valid session', async () => {
   expect(restored.store.getState().user.status).toBe('authenticated');
 });
 
+test('local login and session verification use the same-origin auth proxy', async () => {
+  vi.stubEnv('DEV', true);
+  const fetchMock = vi.fn().mockResolvedValueOnce(Response.json(payload()))
+    .mockResolvedValueOnce(Response.json({ user: payload().user }));
+  vi.stubGlobal('fetch', fetchMock);
+  const { loginRequest, meRequest, apiUrl } = await import('../src/services/authApi');
+  const session = await loginRequest(credentials, new AbortController().signal);
+  await meRequest(session);
+  expect(fetchMock.mock.calls[0][0]).toBe('/auth-backend/api/login');
+  expect(fetchMock.mock.calls[1][0]).toBe('/auth-backend/api/me');
+  expect(apiUrl('/api/listDashboardDevices')).toBe('/auth-backend/api/listDashboardDevices');
+});
+
+test('local voltage requests use the proxy even when the environment points at the read app', async () => {
+  vi.stubEnv('DEV', true);
+  vi.stubEnv('VITE_API_BASE_URL', 'https://read.example');
+  const { apiUrl } = await import('../src/services/authApi');
+  expect(apiUrl('/api/getLatestVoltage?deviceId=1')).toBe('/backend/api/read/getLatestVoltage?deviceId=1');
+  expect(apiUrl('/api/getHistoricalVoltage?deviceId=1')).toBe('/backend/api/read/getHistoricalVoltage?deviceId=1');
+});
+
+test('production voltage requests preserve the configured backend', async () => {
+  const { apiUrl } = await import('../src/services/authApi');
+  expect(apiUrl('/api/getLatestVoltage?deviceId=1')).toBe('https://backend.example/api/read/getLatestVoltage?deviceId=1');
+});
+
 test.each([null, { ...payload(), expiresIn: -1 }, { ...payload(), user: {} }])('rejects malformed or expired login response %j', async body => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body)));
   const { store } = await import('../src/store');

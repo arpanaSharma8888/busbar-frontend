@@ -23,6 +23,7 @@ export default defineConfig(({ mode, command }) => {
             '/auth-backend': {
               target:
                 env.AZURE_AUTH_API_URL ||
+                env.VITE_AUTH_API_BASE_URL ||
                 'http://localhost:7071',
               changeOrigin: true,
               rewrite: (path) =>

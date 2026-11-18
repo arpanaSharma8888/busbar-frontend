@@ -35,7 +35,8 @@ export default function Sidebar() {
             to={path}
             label={label}
             leftSection={<Icon size={18} />}
-            active={location.pathname === path}
+            active={location.pathname === path || location.pathname.startsWith(`${path}/`)}
+            className={location.pathname === path || location.pathname.startsWith(`${path}/`) ? 'sidebar-link sidebar-link-active' : 'sidebar-link'}
             variant="light"
             color="blue"
             style={{ borderRadius: 8 }}

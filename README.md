@@ -146,8 +146,15 @@ The backend login endpoint is not implemented in this frontend repository.
 
 ### Local authentication proxy
 
+During development, voltage requests always use `/backend/api/read/...`, which
+Vite forwards to `VITE_AUTH_API_BASE_URL`. This avoids direct browser requests to
+the read Function App even if a local `VITE_API_BASE_URL` contains its URL.
+Production voltage requests still use `VITE_API_BASE_URL` as configured above.
+
 During `npm run dev`, auth requests use `/auth-backend/api/...`. Vite forwards
 them to `VITE_AUTH_API_BASE_URL`, avoiding cross-origin browser requests locally.
+Set `AZURE_AUTH_API_URL` only to override that proxy target (for example, to run
+the auth backend at `http://localhost:7071`).
 Restart Vite after changing its proxy configuration. Production builds use the
 Azure URL directly; configure the deployed frontend origin in the auth Function
 App's CORS allowed origins. The Vite development proxy is not a production proxy.

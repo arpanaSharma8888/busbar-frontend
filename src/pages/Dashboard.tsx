@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Group, Loader, NumberFormatter, Paper, Stack, Tabs, Text, Title } from '@mantine/core';
-import { Activity, History, Zap, Radio, ArrowUpRight } from 'lucide-react';
+import { Activity, History, Zap, Radio, ArrowUpRight, Check } from 'lucide-react';
 import { getAllDevices, getLatestVoltage } from '../services/voltageApi';
 import type { BusbarDevice } from '../services/voltageApi';
 import type { VoltageReading } from '../types/voltage';
@@ -71,10 +71,8 @@ export default function Dashboard() {
             <Stack gap={6}>
               <Group justify="space-between"><Text size="sm" fw={600} truncate title={`Device ${device.deviceId}`}>Device {device.deviceId}</Text><Badge size="xs" color={state?.error ? 'red' : 'gray'} variant="light">{state?.error ? 'Unavailable' : !state ? 'Loading' : reading ? 'Available' : 'No data'}</Badge></Group>
               <Group gap="xs" className="device-voltage"><Zap size={16} /><Title order={2}>{!state ? <Loader size="sm" /> : reading ? <NumberFormatter value={reading.voltage} decimalScale={3} suffix=" mV" fixedDecimalScale /> : '--'}</Title></Group>
-              <Text size="xs" c="dimmed" truncate>MAC: {reading?.macId ?? device.macId ?? '--'}</Text>
-              <Text size="xs" c="dimmed">{reading?.receivedAt ? new Date(reading.receivedAt).toLocaleString() : 'Awaiting first reading'}</Text>
-              {state?.error && <Alert color="red" title="Unable to refresh">{state.error}</Alert>}
-              <Button size="compact-xs" fullWidth justify="space-between" rightSection={<ArrowUpRight size={16} />} variant={selected ? 'light' : 'subtle'} aria-pressed={selected} onClick={() => setDeviceId(device.deviceId)}>{selected ? 'Selected' : 'View'}</Button>
+              {state?.error && <Text size="xs" c="red" title={state.error}>{reading ? 'Refresh failed · showing last reading' : 'Unable to load reading'}</Text>}
+              <Button size="xs" fullWidth justify="space-between" rightSection={selected ? <Check size={16} /> : <ArrowUpRight size={16} />} variant={selected ? 'filled' : 'light'} aria-label={`${selected ? 'Selected' : 'View'} device ${device.deviceId}`} aria-pressed={selected} onClick={() => setDeviceId(device.deviceId)}>{selected ? 'Selected device' : 'View device'}</Button>
             </Stack>
           </Card>;
         })}

@@ -1,6 +1,7 @@
 
 import { store } from '../store';
 import { sessionExpired } from '../store/userSlice';
+import { authUrl } from './authApi';
 
 export interface RegisteredDevice {
   deviceId: string;
@@ -29,12 +30,6 @@ async function deviceRequest<T>(
     throw new Error('Please sign in to continue.');
   }
 
-  const base = import.meta.env.VITE_AUTH_API_BASE_URL;
-
-  if (!base) {
-    throw new Error('VITE_AUTH_API_BASE_URL is not configured.');
-  }
-
   const headers = new Headers(options.headers);
   headers.set('Authorization', `Bearer ${session.accessToken}`);
   headers.set('Accept', 'application/json');
@@ -44,7 +39,7 @@ async function deviceRequest<T>(
   }
 
   const response = await fetch(
-    `${base.replace(/\/$/, '')}${path}`,
+    authUrl(path),
     {
       ...options,
       headers,

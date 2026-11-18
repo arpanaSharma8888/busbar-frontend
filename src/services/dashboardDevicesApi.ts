@@ -1,5 +1,6 @@
 import { store } from '../store';
 import { sessionExpired } from '../store/userSlice';
+import { authUrl } from './authApi';
 
 export interface DashboardDevice {
   deviceId: string;
@@ -14,9 +15,7 @@ export async function listDashboardDevices(signal?: AbortSignal): Promise<Dashbo
     store.dispatch(sessionExpired());
     throw new Error('Please sign in again.');
   }
-  const base = import.meta.env.VITE_AUTH_API_BASE_URL;
-  if (!base) throw new Error('VITE_AUTH_API_BASE_URL is not configured');
-  const response = await fetch(`${base.replace(/\/$/, '')}/api/listDashboardDevices`, {
+  const response = await fetch(authUrl('/api/listDashboardDevices'), {
     headers: { Authorization: `Bearer ${session.accessToken}`, Accept: 'application/json' },
     cache: 'no-store', signal
   });
