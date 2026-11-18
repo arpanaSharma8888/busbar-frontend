@@ -40,9 +40,9 @@ export class UsbProvisioningSession {
         }
         if (start < 0) this.buffer = this.buffer.length && this.buffer[this.buffer.length - 1] === 2 ? Uint8Array.of(2) : new Uint8Array(0);
         else if (start > 0) this.buffer = this.buffer.slice(start);
-        if (this.buffer.length >= 5) {
-          const length = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength).getUint16(3, true);
-          if (length < 8 || length > MAX_FRAME) throw new Error('Invalid controller packet length');
+        if (this.buffer.length >= 6) {
+          const length = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength).getUint16(4, true);
+          if (length < 10 || length > MAX_FRAME) throw new Error('Invalid controller packet length');
           if (this.buffer.length >= length) {
             const parsed = parseFrame(this.buffer.slice(0, length));
             this.buffer = this.buffer.slice(length);

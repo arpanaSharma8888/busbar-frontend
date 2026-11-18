@@ -1,36 +1,37 @@
-/** BCPP v1: 9600 8N1; little-endian length/device ID; CRC-16/CCITT-FALSE over code through payload. */
+/** BCPP v1: 9600 8N1; little-endian length/device ID; CRC-16/MODBUS over STX through payload; four-byte prefix (02 02 00 00); length at offsets 4-5; code at offset 6. */
 export const PACKET = { HELLO: 0xA1, HELLO_RESPONSE: 0xA2, PROVISION: 0xA3, PROVISION_RESPONSE: 0xA4 } as const;
 export const STX = 0x02;
-const HEADER = 5;
+const HEADER = 7;
 const TRAILER = 2;
-export const MAX_FRAME = 577;
+export const MAX_FRAME = 579;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 export function crc16(bytes: Uint8Array): number {
   let crc = 0xffff;
   for (const byte of bytes) {
-    crc ^= byte << 8;
-    for (let i = 0; i < 8; i++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    crc ^= byte;
+    for (let i = 0; i < 8; i++) crc = (crc & 1) ? ((crc >>> 1) ^ 0xA001) : (crc >>> 1);
   }
-  return crc;
+  return crc & 0xffff;
 }
 export function frame(code: number, payload: Uint8Array): Uint8Array {
   const size = HEADER + payload.length + TRAILER;
   if (size > MAX_FRAME) throw new Error('Packet exceeds maximum length');
   const out = new Uint8Array(size);
-  out[0] = STX; out[1] = STX; out[2] = code;
-  new DataView(out.buffer).setUint16(3, size, true);
+  out[0] = STX; out[1] = STX; out[2] = 0x00; out[3] = 0x00; // Placeholder prefix bytes: confirm firmware header
+  new DataView(out.buffer).setUint16(4, size, true);
+  out[6] = code;
   out.set(payload, HEADER);
-  new DataView(out.buffer).setUint16(size - 2, crc16(out.subarray(2, size - 2)), true);
+  new DataView(out.buffer).setUint16(size - 2, crc16(out.subarray(0, size - 2)), true);
   return out;
 }
 export function parseFrame(bytes: Uint8Array): { code: number; payload: Uint8Array } {
-  if (bytes.length < 8 || bytes[0] !== STX || bytes[1] !== STX) throw new Error('Invalid packet start');
+  if (bytes.length < 9 || bytes[0] !== STX || bytes[1] !== STX || bytes[2] !== 0 || bytes[3] !== 0) throw new Error('Invalid packet start');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (view.getUint16(3, true) !== bytes.length) throw new Error('Invalid packet length');
-  if (view.getUint16(bytes.length - 2, true) !== crc16(bytes.subarray(2, bytes.length - 2))) throw new Error('Controller packet CRC mismatch');
-  return { code: bytes[2], payload: bytes.slice(HEADER, -TRAILER) };
+  if (view.getUint16(4, true) !== bytes.length) throw new Error('Invalid packet length');
+  if (view.getUint16(bytes.length - 2, true) !== crc16(bytes.subarray(0, bytes.length - 2))) throw new Error('Controller packet CRC mismatch');
+  return { code: bytes[6], payload: bytes.slice(HEADER, -TRAILER) };
 }
 export function deviceIdToNumber(id: string): number {
   if (!/^(0|[1-9][0-9]*)$/.test(id)) throw new Error('Firmware protocol requires a numeric 32-bit Device ID');
