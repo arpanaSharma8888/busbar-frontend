@@ -1,5 +1,5 @@
 /** Four-packet BCPP v1 binary USB protocol, 9600 8N1. */
-import { PACKET, MAX_FRAME, helloPacket, parseFrame, parseHelloResponse, provisionPacket, parseProvisionResponse } from './busbarPacketProtocol';
+import { PACKET, MAX_FRAME, helloPacket, parseFrame, parseHelloResponse, provisionPacket, parseProvisionResponse, packetLogSummary } from './busbarPacketProtocol';
 export const APIM_VOLTAGE_URL = 'https://busbar-apim-dev.azure-api.net/v1/voltage';
 export type Identity = { deviceId: string; macId: string };
 export type UsbPort = {
@@ -24,7 +24,7 @@ export class UsbProvisioningSession {
   private async send(bytes: Uint8Array): Promise<void> {
     if (!this.port?.writable) throw new Error('Serial port disconnected.');
     const writer = this.port.writable.getWriter();
-    try { await writer.write(bytes); } finally { writer.releaseLock(); }
+    try { console.info('[BCPP TX]', packetLogSummary(bytes)); await writer.write(bytes); } finally { writer.releaseLock(); }
   }
   private async receive(expectedCode: number, timeoutMs = 6000): Promise<Uint8Array> {
     if (!this.reader) throw new Error('Serial port is not open.');
@@ -33,18 +33,17 @@ export class UsbProvisioningSession {
     const timer = setTimeout(() => { expired = true; void reader.cancel().catch(() => {}); }, timeoutMs);
     try {
       while (true) {
-        // Discard noise until the STX pair, retaining a possible trailing STX.
-        let start = -1;
-        for (let i = 0; i < this.buffer.length - 1; i++) {
-          if (this.buffer[i] === 2 && this.buffer[i + 1] === 2) { start = i; break; }
-        }
-        if (start < 0) this.buffer = this.buffer.length && this.buffer[this.buffer.length - 1] === 2 ? Uint8Array.of(2) : new Uint8Array(0);
+        // STX is one byte; length is uint16 little-endian at offsets 1-2.
+        const start = this.buffer.indexOf(2);
+        if (start < 0) this.buffer = new Uint8Array(0);
         else if (start > 0) this.buffer = this.buffer.slice(start);
-        if (this.buffer.length >= 6) {
-          const length = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength).getUint16(4, true);
-          if (length < 10 || length > MAX_FRAME) throw new Error('Invalid controller packet length');
+        if (this.buffer.length >= 3) {
+          const length = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength).getUint16(1, true);
+          if (length < 6 || length > MAX_FRAME) throw new Error(`Invalid controller packet length: ${length}`);
           if (this.buffer.length >= length) {
-            const parsed = parseFrame(this.buffer.slice(0, length));
+            const packet = this.buffer.slice(0, length);
+            console.info('[BCPP RX]', packetLogSummary(packet));
+            const parsed = parseFrame(packet);
             this.buffer = this.buffer.slice(length);
             if (parsed.code !== expectedCode) throw new Error(`Unexpected controller packet 0x${parsed.code.toString(16)}`);
             return parsed.payload;
@@ -55,6 +54,7 @@ export class UsbProvisioningSession {
         const next = new Uint8Array(this.buffer.length + result.value.length);
         next.set(this.buffer); next.set(result.value, this.buffer.length);
         this.buffer = next;
+        console.debug('[BCPP RX chunk]', result.value.length, 'bytes; buffered', this.buffer.length, 'bytes');
         if (this.buffer.length > MAX_FRAME * 2) throw new Error('Serial receive buffer exceeded limit');
       }
     } finally { clearTimeout(timer); }

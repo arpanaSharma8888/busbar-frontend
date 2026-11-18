@@ -1,9 +1,9 @@
-/** BCPP v1: 9600 8N1; little-endian length/device ID; CRC-16/MODBUS over STX through payload; four-byte prefix (02 02 00 00); length at offsets 4-5; code at offset 6. */
+/** BCPP v1: 9600 8N1; little-endian length/device ID; CRC-16/MODBUS over STX through payload; one-byte STX (02); length at offsets 1-2; code at offset 3. */
 export const PACKET = { HELLO: 0xA1, HELLO_RESPONSE: 0xA2, PROVISION: 0xA3, PROVISION_RESPONSE: 0xA4 } as const;
 export const STX = 0x02;
-const HEADER = 7;
+const HEADER = 4;
 const TRAILER = 2;
-export const MAX_FRAME = 579;
+export const MAX_FRAME = 576;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
@@ -19,19 +19,19 @@ export function frame(code: number, payload: Uint8Array): Uint8Array {
   const size = HEADER + payload.length + TRAILER;
   if (size > MAX_FRAME) throw new Error('Packet exceeds maximum length');
   const out = new Uint8Array(size);
-  out[0] = STX; out[1] = STX; out[2] = 0x00; out[3] = 0x00; // Placeholder prefix bytes: confirm firmware header
-  new DataView(out.buffer).setUint16(4, size, true);
-  out[6] = code;
+  out[0] = STX;
+  new DataView(out.buffer).setUint16(1, size, true);
+  out[3] = code;
   out.set(payload, HEADER);
   new DataView(out.buffer).setUint16(size - 2, crc16(out.subarray(0, size - 2)), true);
   return out;
 }
 export function parseFrame(bytes: Uint8Array): { code: number; payload: Uint8Array } {
-  if (bytes.length < 9 || bytes[0] !== STX || bytes[1] !== STX || bytes[2] !== 0 || bytes[3] !== 0) throw new Error('Invalid packet start');
+  if (bytes.length < 6 || bytes[0] !== STX) throw new Error('Invalid packet start');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (view.getUint16(4, true) !== bytes.length) throw new Error('Invalid packet length');
+  if (view.getUint16(1, true) !== bytes.length) throw new Error('Invalid packet length');
   if (view.getUint16(bytes.length - 2, true) !== crc16(bytes.subarray(0, bytes.length - 2))) throw new Error('Controller packet CRC mismatch');
-  return { code: bytes[6], payload: bytes.slice(HEADER, -TRAILER) };
+  return { code: bytes[3], payload: bytes.slice(HEADER, -TRAILER) };
 }
 export function deviceIdToNumber(id: string): number {
   if (!/^(0|[1-9][0-9]*)$/.test(id)) throw new Error('Firmware protocol requires a numeric 32-bit Device ID');
@@ -87,4 +87,16 @@ export function parseProvisionResponse(payload: Uint8Array): string {
   if (payload[0] !== 0) throw new Error(`Controller rejected provisioning (status 0x${payload[0].toString(16).padStart(2, '0')})`);
   if (payload.subarray(1).every(x => x === 0)) throw new Error('Controller returned an empty HMAC proof');
   return [...payload.subarray(1)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+/** Diagnostic view: credentials and HMAC proofs are never printed. */
+export function packetLogSummary(bytes: Uint8Array): string {
+  const code = bytes[3];
+  const names: Record<number, string> = { 0xA1: 'HELLO', 0xA2: 'HELLO_RESPONSE', 0xA3: 'DEVICE_PROVISIONING', 0xA4: 'PROVISIONING_RESPONSE' };
+  const label = names[code] ?? 'UNKNOWN';
+  const hex = (part: Uint8Array) => [...part].map(x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+  const safeHeader = hex(bytes.subarray(0, Math.min(4, bytes.length)));
+  const safeCrc = hex(bytes.subarray(Math.max(0, bytes.length - 2)));
+  if (code === PACKET.HELLO || code === PACKET.HELLO_RESPONSE) return `${label} | length=${bytes.length} | hex=${hex(bytes)}`;
+  return `${label} | length=${bytes.length} | header=${safeHeader} | payload=[REDACTED] | crc=${safeCrc}`;
 }
