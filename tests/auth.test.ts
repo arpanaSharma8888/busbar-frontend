@@ -72,6 +72,20 @@ test('production voltage requests preserve the configured backend', async () => 
   expect(apiUrl('/api/getLatestVoltage?deviceId=1')).toBe('https://backend.example/api/read/getLatestVoltage?deviceId=1');
 });
 
+test('first device request after login uses the auth endpoint and the new token without a reload', async () => {
+  const device = { deviceId: 'device-1', macId: null };
+  const fetchMock = vi.fn().mockResolvedValueOnce(Response.json(payload()))
+    .mockResolvedValueOnce(Response.json({ success: true, data: [{ ...device, status: 'active' }] }));
+  vi.stubGlobal('fetch', fetchMock);
+  const { store } = await import('../src/store');
+  const { login } = await import('../src/store/userSlice');
+  const { getAllDevices } = await import('../src/services/voltageApi');
+  await store.dispatch(login(credentials));
+  expect(await getAllDevices()).toEqual([device]);
+  expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:7071/api/listDashboardDevices');
+  expect(fetchMock.mock.calls[1][1].headers.get('Authorization')).toBe('Bearer opaque-token');
+});
+
 test.each([null, { ...payload(), expiresIn: -1 }, { ...payload(), user: {} }])('rejects malformed or expired login response %j', async body => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body)));
   const { store } = await import('../src/store');

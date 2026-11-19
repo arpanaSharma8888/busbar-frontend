@@ -78,7 +78,8 @@ export default defineConfig([
 
 The Azure deployment workflow sets `VITE_API_BASE_URL` to the auth Function App
 origin (`https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net`).
-The client uses `/api/read/getAllDevices` and the other authenticated proxy paths; do not append
+Voltage readings use `/api/read/getLatestVoltage` and `/api/read/getHistoricalVoltage`;
+the device list uses `/api/listDashboardDevices` on `VITE_AUTH_API_BASE_URL`. Do not append
 `/api` to this base URL. `/backend` is only a local Vite development proxy and
 does not exist in the deployed static site. Using it in production previously
 returned the frontend HTML through the navigation fallback instead of JSON.
@@ -95,9 +96,40 @@ to the read functions with server-held function keys. Viewers currently receive
 in a `VITE_*` variable or frontend source. Locally, `/backend` forwards to
 `VITE_AUTH_API_BASE_URL`; the Vite proxy no longer injects a function key.
 
-Verify in browser Network tools that `getAllDevices` calls the auth Function App's
-`/api/read/getAllDevices` endpoint and returns JSON. A CORS error indicates the allowed
+Verify in browser Network tools that the device list calls the auth Function App's
+`/api/listDashboardDevices` endpoint and returns JSON. A CORS error indicates the allowed
 origin needs attention; a 401/403 requires checking backend authentication.
+
+The Static Web Apps configuration disables caching of the HTML entry point,
+including client-side routes served by the navigation fallback, so new visits
+load the current deployment. Vite's hashed `/assets/*` files remain cacheable.
+Deploy the configuration together with the frontend build. If a first-login 404
+persists, compare the failed request URL and response with the request after a
+refresh to distinguish an old frontend from an API-side failure.
+
+## Retrying incomplete USB provisioning
+
+HELLO identifies the controller. Registration then creates a **pending** database
+record before sending A3; only a valid A4 proof activates it. A failed USB exchange
+can therefore leave a pending or cancelled record without a working device.
+
+Device Management shows these incomplete records. Reconnect the same controller,
+then choose **Register / Retry Provisioning**. The frontend calls
+`POST /api/retryDeviceProvisioning` for an existing pending or cancelled identity.
+The backend permits only the original admin and matching identity, archives the
+previous attempt, replaces the credential and challenge, and uses the record's
+ETag to prevent overwriting concurrent changes. Previously activated devices
+cannot use this retry path. No firmware-erasure claim is sent.
+
+Deploy `busbar-auth-backend` with the new `retryDeviceProvisioning` function and
+its `src/index.js` import **before** deploying this frontend. The endpoint requires
+the existing device credential encryption key and provisioning history table
+access. It repairs eligible existing incomplete records on retry; no manual
+database deletion is needed.
+
+The real controller must accept A3 again, store the replacement configuration,
+and return A4 with the new proof. If its firmware requires a reset first, follow
+the controller's reset procedure; retry does not bypass that requirement.
 
 ## Authentication
 

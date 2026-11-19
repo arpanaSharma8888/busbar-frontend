@@ -7,10 +7,10 @@ beforeEach(() => vi.clearAllMocks());
 
 test('loads unique devices through the authenticated client with cancellation', async () => {
   const device = { deviceId: 'actual-device', macId: 'AA:BB:CC:DD:EE:FF' };
-  vi.mocked(authenticatedFetch).mockResolvedValue(Response.json({ success: true, data: [device, device] }));
+  vi.mocked(authenticatedFetch).mockResolvedValue(Response.json({ success: true, data: [{ ...device, status: 'active' }, { ...device, status: 'active' }] }));
   const signal = new AbortController().signal;
   expect(await getAllDevices(signal)).toEqual([device]);
-  expect(authenticatedFetch).toHaveBeenCalledWith('/api/getAllDevices', { signal });
+  expect(authenticatedFetch).toHaveBeenCalledWith('/api/listDashboardDevices', { signal });
 });
 
 test('accepts an empty device list', async () => {

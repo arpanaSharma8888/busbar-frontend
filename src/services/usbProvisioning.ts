@@ -63,7 +63,7 @@ export class UsbProvisioningSession {
     await this.send(helloPacket());
     return parseHelloResponse(await this.receive(PACKET.HELLO_RESPONSE));
   }
-  async eraseCancelledConfiguration(_identity: Identity): Promise<void> {
+  async eraseCancelledConfiguration(): Promise<void> {
     // No authenticated erasure command has been agreed within the four packet codes.
     // Do not bypass recovery safeguards or falsely report erasure.
     throw new Error('Cancelled-device recovery is unavailable in BCPP v1 until firmware defines authenticated erasure.');

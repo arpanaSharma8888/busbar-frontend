@@ -129,9 +129,9 @@ export async function updateDeviceStatus(
 
 
 
-export async function retryCancelledProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
-  return deviceRequest<BeginProvisioningResponse>('/api/retryCancelledProvisioning', {
-    method: 'POST', body: JSON.stringify({ deviceId, macId, erasureConfirmed: true })
+export async function retryDeviceProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
+  return deviceRequest<BeginProvisioningResponse>('/api/retryDeviceProvisioning', {
+    method: 'POST', body: JSON.stringify({ deviceId, macId })
   });
 }
 export interface ProvisioningHistoryRecord {

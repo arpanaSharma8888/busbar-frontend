@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Button, Group, Modal, Paper, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { Plug, RefreshCw, Search } from 'lucide-react';
-import { getRegisteredDevices, beginDeviceProvisioning, completeDeviceProvisioning, cancelDeviceProvisioning, updateDeviceStatus, retryCancelledProvisioning, type RegisteredDevice } from '../services/deviceManagementApi';
+import { getRegisteredDevices, beginDeviceProvisioning, completeDeviceProvisioning, cancelDeviceProvisioning, updateDeviceStatus, retryDeviceProvisioning, type RegisteredDevice } from '../services/deviceManagementApi';
 import { UsbProvisioningSession, type Identity } from '../services/usbProvisioning';
+import { provisioningAction } from '../services/provisioningAttempt';
 
 type WizardStage = 'idle' | 'connecting' | 'identified' | 'registering' | 'provisioning' | 'activating' | 'completed' | 'failed';
 export default function MacIdManagement() {
@@ -60,21 +61,11 @@ export default function MacIdManagement() {
     let activated = false;
     try {
       const existing = await getRegisteredDevices();
-      const sameId = existing.find(d => d.deviceId === identity.deviceId);
-      const sameMac = existing.find(d => d.macId.toUpperCase() === identity.macId);
-      if (sameMac && sameMac.deviceId !== identity.deviceId)
-        throw new Error('MAC address belongs to another device; recovery blocked.');
-      if (sameId && (sameId.status !== 'cancelled' || sameId.macId.toUpperCase() !== identity.macId))
-        throw new Error('Device exists but is not eligible for cancelled-attempt recovery.');
+      const action = provisioningAction(existing, identity);
       setStage('registering');
-      if (sameId) {
-        setRecoveryMode(true);
-        // The connected mock must acknowledge removing the old test configuration
-        // before Azure replaces the cancelled record with a new pending transaction.
-        await session.current.eraseCancelledConfiguration(identity);
-      }
-      const tx = sameId
-        ? await retryCancelledProvisioning(identity.deviceId, identity.macId)
+      setRecoveryMode(action === 'retry');
+      const tx = action === 'retry'
+        ? await retryDeviceProvisioning(identity.deviceId, identity.macId)
         : await beginDeviceProvisioning(identity.deviceId, identity.macId);
       transactionId = tx.transactionId;
       if (tx.deviceId !== identity.deviceId || tx.macId !== identity.macId)
@@ -91,9 +82,9 @@ export default function MacIdManagement() {
       if (transactionId && !activated) {
         try {
           await cancelDeviceProvisioning(identity.deviceId, transactionId);
-          message += ' The Azure attempt was cancelled. The controller may still retain credentials: erase them securely before any retry.';
+          message += ' The attempt was cancelled and the device is not active. Reconnect to retry provisioning.';
         } catch {
-          message += ' Azure cancellation could not be confirmed. The record may remain pending or may have activated if the completion response was lost. Check Azure before retrying.';
+          message += ' Cancellation could not be confirmed. Refresh the device list to check its status. Retry will only be allowed if the attempt is still incomplete.';
         }
       }
       setRecoveryNeeded(!!transactionId);
@@ -118,7 +109,7 @@ export default function MacIdManagement() {
     catch (e) { setError(e instanceof Error ? e.message : 'Status update failed'); }
     finally { setBusyDevice(null); }
   };
-  const filtered = devices.filter(d => ['active','disabled'].includes(d.status) && (d.deviceId + ' ' + d.macId).toLowerCase().includes(search.trim().toLowerCase()));
+  const filtered = devices.filter(d => (d.deviceId + ' ' + d.macId).toLowerCase().includes(search.trim().toLowerCase()));
   return <Stack gap="md">
     <Group justify="space-between"><Title order={2}>Device Management</Title><Button leftSection={<Plug size={16}/>} onClick={() => void start()} disabled={opened}>Register Controller via USB</Button></Group>
     {error && <Alert color="red">{error}</Alert>}
@@ -134,11 +125,11 @@ export default function MacIdManagement() {
       <Text>Stage: <strong>{stage}</strong></Text>
       {identity && <Paper withBorder p="sm"><Text>Device ID: <strong>{identity.deviceId}</strong></Text><Text>MAC ID: <strong>{identity.macId}</strong></Text></Paper>}
       {wizardError && <Alert color="red" title={recoveryNeeded ? 'Provisioning incomplete' : 'Unable to continue'}>{wizardError}</Alert>}
-      {recoveryMode && <Text size="xs" c="dimmed">Recovery requires a firmware-approved authenticated erasure operation; it is not yet available in the four-packet protocol.</Text>}
+      {recoveryMode && <Text size="xs" c="dimmed">Retry sends a new configuration to this controller. If the controller rejects it, reset it according to the firmware instructions before retrying.</Text>}
       {stage === 'completed' && <Alert color="green" title="Controller activated">The controller proved possession of the stored credential and Azure status is active. You can disconnect USB.</Alert>}
-      {stage === 'identified' && <Button onClick={() => void registerAndProvision()}>Register / Recover &amp; Provision Controller</Button>}
+      {stage === 'identified' && <Button onClick={() => void registerAndProvision()}>Register / Retry Provisioning</Button>}
       {['connecting','registering','provisioning','activating'].includes(stage) && <Button loading disabled>Working...</Button>}
-      {stage === 'failed' && !recoveryNeeded && <Button variant="light" onClick={() => void start()}>Reconnect &amp; Retry HELLO</Button>}
+      {stage === 'failed' && <Button variant="light" onClick={() => void start()}>Reconnect &amp; Retry Provisioning</Button>}
       <Button variant="subtle" disabled={isOperating} onClick={() => void closeWizard()}>Close</Button>
     </Stack></Modal>
   </Stack>;
