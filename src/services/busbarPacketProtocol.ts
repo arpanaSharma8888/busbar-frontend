@@ -58,8 +58,25 @@ function hexBytes(hex: string, length: number): Uint8Array {
 }
 function fixedUtf8(value: string, size: number): Uint8Array {
   const bytes = encoder.encode(value);
-  if (!bytes.length || bytes.length > size || bytes.includes(0)) throw new Error('Invalid fixed-width string');
-  const result = new Uint8Array(size); result.set(bytes); return result;
+
+  if (
+    !bytes.length ||
+    bytes.length >= size ||
+    bytes.includes(0) ||
+    bytes.includes(0x0A)
+  ) {
+    throw new Error('Invalid fixed-width string');
+  }
+
+  const result = new Uint8Array(size);
+
+  result.set(bytes, 0);
+
+  // Newline after actual value
+  result[bytes.length] = 0x0A;
+
+  // Remaining bytes are already 0x00
+  return result;
 }
 export function decodeFixedUtf8(bytes: Uint8Array): string {
   const end = bytes.indexOf(0);
