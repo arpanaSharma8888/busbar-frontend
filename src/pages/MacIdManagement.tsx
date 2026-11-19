@@ -72,11 +72,35 @@ export default function MacIdManagement() {
         throw new Error('Azure returned an unexpected controller identity.');
       setStage('provisioning');
       const proof = await session.current.provision(identity, tx);
-      setStage('activating');
-      await completeDeviceProvisioning(identity.deviceId, tx.transactionId, proof);
-      activated = true;
-      setStage('completed');
-      await load();
+setStage('activating');
+
+await completeDeviceProvisioning(
+  identity.deviceId,
+  tx.transactionId,
+  proof
+);
+
+activated = true;
+
+try {
+  await session.current.sendProvisioningConfirmation(true);
+} catch (error) {
+  const reason = error instanceof Error
+    ? error.message
+    : 'USB communication failed';
+
+  setWizardError(
+    `Azure activation succeeded, but the controller ` +
+    `confirmation (A5) could not be sent: ${reason}`
+  );
+
+  setStage('failed');
+  await load();
+  return;
+}
+
+setStage('completed');
+await load();
     } catch (e) {
       let message = e instanceof Error ? e.message : 'Provisioning failed';
       if (transactionId && !activated) {

@@ -1,5 +1,5 @@
 /** Four-packet BCPP v1 binary USB protocol, 9600 8N1. */
-import { PACKET, MAX_FRAME, helloPacket, parseFrame, parseHelloResponse, provisionPacket, parseProvisionResponse, packetLogSummary } from './busbarPacketProtocol';
+import { PACKET, MAX_FRAME, helloPacket, parseFrame, parseHelloResponse, provisionPacket, parseProvisionResponse, packetLogSummary, provisioningConfirmationPacket } from './busbarPacketProtocol';
 export const APIM_VOLTAGE_URL = 'https://busbar-apim-dev.azure-api.net/v1/voltage';
 export type Identity = { deviceId: string; macId: string };
 export type UsbPort = {
@@ -75,6 +75,11 @@ export class UsbProvisioningSession {
     await this.send(provisionPacket(identity, tx));
     return parseProvisionResponse(await this.receive(PACKET.PROVISION_RESPONSE, 10000));
   }
+async sendProvisioningConfirmation(
+  success: boolean
+): Promise<void> {
+  await this.send(provisioningConfirmationPacket(success));
+}
   async close(): Promise<void> {
     try { await this.reader?.cancel(); } catch { /* disconnected */ }
     try { this.reader?.releaseLock(); } catch { /* released */ }

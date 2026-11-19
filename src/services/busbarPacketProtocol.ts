@@ -1,5 +1,5 @@
 /** BCPP v1: 9600 8N1; little-endian length/device ID; CRC-16/MODBUS over STX through payload; one-byte STX (02); length at offsets 1-2; code at offset 3. */
-export const PACKET = { HELLO: 0xA1, HELLO_RESPONSE: 0xA2, PROVISION: 0xA3, PROVISION_RESPONSE: 0xA4 } as const;
+export const PACKET = { HELLO: 0xA1, HELLO_RESPONSE: 0xA2, PROVISION: 0xA3, PROVISION_RESPONSE: 0xA4, CONFIRMATION: 0xA5, } as const;
 export const STX = 0x02;
 const HEADER = 4;
 const TRAILER = 2;
@@ -104,6 +104,17 @@ export function parseProvisionResponse(payload: Uint8Array): string {
   if (payload[0] !== 0) throw new Error(`Controller rejected provisioning (status 0x${payload[0].toString(16).padStart(2, '0')})`);
   if (payload.subarray(1).every(x => x === 0)) throw new Error('Controller returned an empty HMAC proof');
   return [...payload.subarray(1)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+
+export function provisioningConfirmationPacket(
+  success: boolean
+): Uint8Array {
+  const payload = new Uint8Array([
+    success ? 0x01 : 0x00
+  ]);
+
+  return frame(PACKET.CONFIRMATION, payload);
 }
 
 /** Diagnostic view: credentials and HMAC proofs are never printed. */
