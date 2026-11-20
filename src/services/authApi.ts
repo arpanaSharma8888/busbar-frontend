@@ -9,26 +9,22 @@ export function apiUrl(path: string): string {
     throw new Error('API path must start with a single slash');
   }
 
-  // Device management endpoints use the Auth Function App.
-  const authEndpoints = new Set([
-    '/api/listDashboardDevices',
-  ]);
-
-  if (authEndpoints.has(path.split('?')[0])) {
+  // Device registry remains on the authenticated Auth Function App.
+  if (path.split('?')[0] === '/api/listDashboardDevices') {
     return authUrl(path);
   }
 
-  // Vite forwards local voltage requests to the Auth Function App's read proxy.
-  const readBase = import.meta.env.DEV ? '/backend' : import.meta.env.VITE_API_BASE_URL;
+  // Voltage GET operations are exposed through APIM, which forwards the
+  // Authorization bearer token to the Auth Function App's read proxy.
+  const base = import.meta.env.DEV
+    ? '/apim-read'
+    : import.meta.env.VITE_APIM_READ_BASE_URL;
+  if (!base) throw new Error('VITE_APIM_READ_BASE_URL is not configured');
 
-  if (!readBase) {
-    throw new Error('VITE_API_BASE_URL is not configured');
-  }
-
-  return `${readBase.replace(/\/$/, '')}${path.replace(/^\/api\//, '/api/read/')}`;
+  const match = path.match(/^\/api\/(getLatestVoltage|getHistoricalVoltage|getVoltageRecords)(\?.*)?$/);
+  if (!match) throw new Error('Unsupported voltage read API path');
+  return `${base.replace(/\/$/, '')}/read/${match[1]}${match[2] ?? ''}`;
 }
-
-
 export async function loginRequest(credentials: LoginCredentials, signal: AbortSignal): Promise<Session> {
   const response = await fetch(authUrl('/api/login'), {
     method: 'POST',

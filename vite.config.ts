@@ -20,6 +20,12 @@ export default defineConfig(({ mode, command }) => {
                 path.replace(/^\/backend/, ''),
             },
 
+            '/apim-read': {
+              target: env.APIM_GATEWAY_URL || 'https://busbar-apim-dev.azure-api.net',
+              changeOrigin: true,
+              rewrite: (path) => path.replace(/^\/apim-read/, '/v1'),
+            },
+
             '/auth-backend': {
               target:
                 env.AZURE_AUTH_API_URL ||
