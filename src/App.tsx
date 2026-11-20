@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import RequireAuth from './components/RequireAuth';
@@ -21,16 +20,16 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
 
         <Route element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/realtime" element={<RealtimeGraph />} />
-          <Route path="/historical" element={<HistoricalGraph />} />
-          <Route path="/records" element={<TabularData />} />
-          <Route element={<RequireRole role="admin" />}>
-            <Route path="/mac-ids" element={<MacIdManagement />} />
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/realtime" element={<RealtimeGraph />} />
+            <Route path="/historical" element={<HistoricalGraph />} />
+            <Route path="/records" element={<TabularData />} />
+            <Route element={<RequireRole role="admin" />}>
+              <Route path="/mac-ids" element={<MacIdManagement />} />
+            </Route>
+            <Route path="/profile" element={<EditProfile />} />
           </Route>
-          <Route path="/profile" element={<EditProfile />} />
-        </Route>
         </Route>
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

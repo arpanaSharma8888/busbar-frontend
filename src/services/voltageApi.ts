@@ -1,28 +1,24 @@
-
-import type {
-  LatestVoltageResponse,
-} from '../types/voltage';
+import type { LatestVoltageResponse } from '../types/voltage';
 
 import { authenticatedFetch } from './apiClient';
 
 async function readVoltageJson<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('application/json') && !contentType.includes('+json')) {
-    throw new Error('The voltage API returned a non-JSON response. Check VITE_APIM_READ_BASE_URL and APIM GET operations. For deployed sites, configure the API URL in the build environment and rebuild and redeploy the frontend. For local development, check the /apim-read proxy and restart Vite.');
+    throw new Error(
+      'The voltage API returned a non-JSON response. Check VITE_APIM_READ_BASE_URL and APIM GET operations. For deployed sites, configure the API URL in the build environment and rebuild and redeploy the frontend. For local development, check the /apim-read proxy and restart Vite.',
+    );
   }
   return response.json();
 }
 
 export async function getLatestVoltage(
   deviceId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<LatestVoltageResponse> {
   const params = new URLSearchParams({ deviceId });
 
-  const response = await authenticatedFetch(
-    `/api/getLatestVoltage?${params}`,
-    { signal }
-  );
+  const response = await authenticatedFetch(`/api/getLatestVoltage?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`);
@@ -31,22 +27,17 @@ export async function getLatestVoltage(
   return readVoltageJson<LatestVoltageResponse>(response);
 }
 
-import type {
-  HistoricalVoltageResponse,
-} from '../types/voltage';
+import type { HistoricalVoltageResponse } from '../types/voltage';
 
 export async function getHistoricalVoltage(
   deviceId: string,
   from: string,
   to: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<HistoricalVoltageResponse> {
   const params = new URLSearchParams({ deviceId, from, to });
 
-  const response = await authenticatedFetch(
-    `/api/getHistoricalVoltage?${params}`,
-    { signal }
-  );
+  const response = await authenticatedFetch(`/api/getHistoricalVoltage?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Historical API failed: ${response.status}`);
@@ -55,7 +46,6 @@ export async function getHistoricalVoltage(
   return readVoltageJson<HistoricalVoltageResponse>(response);
 }
 
-
 export interface BusbarDevice {
   deviceId: string;
   macId: string | null;
@@ -63,12 +53,31 @@ export interface BusbarDevice {
 
 export async function getAllDevices(signal?: AbortSignal): Promise<BusbarDevice[]> {
   const response = await authenticatedFetch('/api/listDashboardDevices', { signal });
-  if (!response.ok) throw new Error(`Unable to fetch devices: ${response.status}`);
-  const result = await readVoltageJson<{ success: boolean; data: (BusbarDevice & { status: string })[] }>(response);
-  if (!result.success || !Array.isArray(result.data) || result.data.some(device =>
-    !device || typeof device.deviceId !== 'string' || !device.deviceId.trim()
-    || (device.macId !== null && typeof device.macId !== 'string'))) {
+  if (!response.ok) {
+    throw new Error(`Unable to fetch devices: ${response.status}`);
+  }
+  const result = await readVoltageJson<{
+    success: boolean;
+    data: (BusbarDevice & { status: string })[];
+  }>(response);
+  if (
+    !result.success ||
+    !Array.isArray(result.data) ||
+    result.data.some(
+      (device) =>
+        !device ||
+        typeof device.deviceId !== 'string' ||
+        !device.deviceId.trim() ||
+        (device.macId !== null && typeof device.macId !== 'string'),
+    )
+  ) {
     throw new Error('Invalid device response');
   }
-  return [...new Map(result.data.filter(device => device.status === 'active').map(device => [device.deviceId, { deviceId: device.deviceId, macId: device.macId }])).values()];
+  return [
+    ...new Map(
+      result.data
+        .filter((device) => device.status === 'active')
+        .map((device) => [device.deviceId, { deviceId: device.deviceId, macId: device.macId }]),
+    ).values(),
+  ];
 }

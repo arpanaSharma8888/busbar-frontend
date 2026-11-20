@@ -1,31 +1,28 @@
-
-import {
-  ActionIcon,
-  Avatar,
-  Group,
-  Text,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { ActionIcon, Avatar, Group, Text, useMantineColorScheme } from '@mantine/core';
 import { Moon, Sun, LogOut } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/userSlice';
+import CompanyBrand from '../CompanyBrand';
 
 export default function Header() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.user.session?.user);
+  const user = useAppSelector((state) => state.user.session?.user);
   const displayName = user?.name || user?.username || 'User';
 
   return (
-    <Group justify="space-between" h="100%" px="lg">
-      <div>
-        <Text fw={650} size="sm">Busbar <Text span c="dimmed" fw={400}>/ Monitoring</Text></Text>
+    <Group justify="space-between" h="100%" px="lg" className="system-header">
+      <div className="system-identity">
+        <CompanyBrand />
+        <div className="system-title">
+          <Text fw={700}>Busbar Voltage Monitoring System</Text>
+        </div>
       </div>
 
       <Group gap="md">
         <ActionIcon
           variant="subtle"
-          color="gray"
+          color="teal"
           size="lg"
           onClick={toggleColorScheme}
           aria-label="Toggle theme"
@@ -34,15 +31,17 @@ export default function Header() {
         </ActionIcon>
 
         <Group gap="xs">
-          <Avatar color="blue" radius="xl" size="sm">
+          <Avatar color="teal" radius="xl" size="sm">
             {displayName.charAt(0).toUpperCase()}
           </Avatar>
-          <Text size="sm" fw={500}>{displayName}</Text>
+          <Text size="sm" fw={500}>
+            {displayName}
+          </Text>
         </Group>
 
         <ActionIcon
           variant="subtle"
-          color="gray"
+          color="teal"
           size="lg"
           aria-label="Logout"
           onClick={() => dispatch(logout())}

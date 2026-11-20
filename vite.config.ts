@@ -11,6 +11,14 @@ export default defineConfig(({ mode, command }) => {
     plugins: [react()],
 
     server: {
+      // Formatters may briefly truncate files while saving. Reload only once
+      // the write settles, so Vite does not cache an empty module.
+      watch: {
+        awaitWriteFinish: {
+          stabilityThreshold: 200,
+          pollInterval: 50,
+        },
+      },
       proxy: isDev
         ? {
             '/backend': {

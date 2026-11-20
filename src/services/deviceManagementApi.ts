@@ -1,4 +1,3 @@
-
 import { store } from '../store';
 import { sessionExpired } from '../store/userSlice';
 import { authUrl } from './authApi';
@@ -19,10 +18,7 @@ export interface DeviceRegistrationResponse {
   deviceSecret: string;
 }
 
-async function deviceRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function deviceRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const session = store.getState().user.session;
 
   if (!session || session.expiresAt <= Date.now()) {
@@ -38,15 +34,12 @@ async function deviceRequest<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(
-    authUrl(path),
-    {
-      ...options,
-      headers,
-      cache: 'no-store',
-      redirect: 'error',
-    }
-  );
+  const response = await fetch(authUrl(path), {
+    ...options,
+    headers,
+    cache: 'no-store',
+    redirect: 'error',
+  });
 
   if (response.status === 401) {
     if (store.getState().user.session === session) {
@@ -59,18 +52,14 @@ async function deviceRequest<T>(
 
   if (!response.ok) {
     throw new Error(
-      typeof data?.message === 'string'
-        ? data.message
-        : `Request failed (${response.status})`
+      typeof data?.message === 'string' ? data.message : `Request failed (${response.status})`,
     );
   }
 
   return data as T;
 }
 
-export async function getRegisteredDevices(
-  signal?: AbortSignal
-): Promise<RegisteredDevice[]> {
+export async function getRegisteredDevices(signal?: AbortSignal): Promise<RegisteredDevice[]> {
   const result = await deviceRequest<{
     success: boolean;
     data: RegisteredDevice[];
@@ -93,27 +82,44 @@ export interface BeginProvisioningResponse {
   apimUrl: string;
   deviceSecret: string;
 }
-export async function beginDeviceProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
+export async function beginDeviceProvisioning(
+  deviceId: string,
+  macId: string,
+): Promise<BeginProvisioningResponse> {
   return deviceRequest<BeginProvisioningResponse>('/api/beginDeviceProvisioning', {
-    method: 'POST', body: JSON.stringify({ deviceId, macId })
+    method: 'POST',
+    body: JSON.stringify({ deviceId, macId }),
   });
 }
-export async function completeDeviceProvisioning(deviceId: string, transactionId: string, proof: string): Promise<void> {
-  const result = await deviceRequest<{success:boolean}>('/api/completeDeviceProvisioning', {
-    method: 'POST', body: JSON.stringify({ deviceId, transactionId, proof })
+export async function completeDeviceProvisioning(
+  deviceId: string,
+  transactionId: string,
+  proof: string,
+): Promise<void> {
+  const result = await deviceRequest<{ success: boolean }>('/api/completeDeviceProvisioning', {
+    method: 'POST',
+    body: JSON.stringify({ deviceId, transactionId, proof }),
   });
-  if (!result.success) throw new Error('Provisioning could not be completed.');
+  if (!result.success) {
+    throw new Error('Provisioning could not be completed.');
+  }
 }
-export async function cancelDeviceProvisioning(deviceId: string, transactionId: string): Promise<void> {
-  const result = await deviceRequest<{success:boolean}>('/api/cancelDeviceProvisioning', {
-    method: 'POST', body: JSON.stringify({ deviceId, transactionId })
+export async function cancelDeviceProvisioning(
+  deviceId: string,
+  transactionId: string,
+): Promise<void> {
+  const result = await deviceRequest<{ success: boolean }>('/api/cancelDeviceProvisioning', {
+    method: 'POST',
+    body: JSON.stringify({ deviceId, transactionId }),
   });
-  if (!result.success) throw new Error('Unable to cancel provisioning.');
+  if (!result.success) {
+    throw new Error('Unable to cancel provisioning.');
+  }
 }
 
 export async function updateDeviceStatus(
   deviceId: string,
-  status: 'active' | 'disabled'
+  status: 'active' | 'disabled',
 ): Promise<void> {
   const result = await deviceRequest<{
     success: boolean;
@@ -127,18 +133,29 @@ export async function updateDeviceStatus(
   }
 }
 
-
-
-export async function retryDeviceProvisioning(deviceId: string, macId: string): Promise<BeginProvisioningResponse> {
+export async function retryDeviceProvisioning(
+  deviceId: string,
+  macId: string,
+): Promise<BeginProvisioningResponse> {
   return deviceRequest<BeginProvisioningResponse>('/api/retryDeviceProvisioning', {
-    method: 'POST', body: JSON.stringify({ deviceId, macId })
+    method: 'POST',
+    body: JSON.stringify({ deviceId, macId }),
   });
 }
 export interface ProvisioningHistoryRecord {
-  deviceId: string; transactionId: string; macId: string; status: string; createdAt: string; closedAt: string;
+  deviceId: string;
+  transactionId: string;
+  macId: string;
+  status: string;
+  createdAt: string;
+  closedAt: string;
 }
 export async function getProvisioningHistory(): Promise<ProvisioningHistoryRecord[]> {
-  const result = await deviceRequest<{success:boolean;data:ProvisioningHistoryRecord[]}>('/api/getProvisioningHistory');
-  if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid provisioning history response');
+  const result = await deviceRequest<{ success: boolean; data: ProvisioningHistoryRecord[] }>(
+    '/api/getProvisioningHistory',
+  );
+  if (!result.success || !Array.isArray(result.data)) {
+    throw new Error('Invalid provisioning history response');
+  }
   return result.data;
 }

@@ -1,40 +1,128 @@
-.monitor-dashboard {
-  padding: 0 4px;
-  max-width: 1600px;
-  margin: 0 auto;
+.monitor-dashboard .device-strip {
+  display: grid;
+  gap: 8px;
 }
-.monitor-dashboard .dashboard-eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.7px;
+.monitor-dashboard .device-card {
+  min-width: 0;
+  background: var(--mantine-color-body);
+  box-shadow: none;
+  border-radius: 6px;
+}
+.monitor-dashboard .device-card-selected {
+  border-color: var(--mantine-primary-color-filled);
+  box-shadow: inset 3px 0 0 var(--mantine-primary-color-filled);
+}
+.monitor-dashboard .device-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(110px, 1fr) minmax(220px, 2fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 2px 8px;
+}
+.monitor-dashboard .device-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.monitor-dashboard .device-voltage {
+  color: var(--mantine-primary-color-light-color);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.monitor-dashboard .device-voltage span {
+  font-size: 14px;
+  font-weight: 400;
   color: var(--mantine-color-dimmed);
-  margin-bottom: 3px;
 }
-.monitor-dashboard .dashboard-title { font-size: 23px; letter-spacing: -1px; font-weight: 650; }
-.device-card { transition: border-color .18s, box-shadow .18s; box-shadow: 0 3px 12px rgb(20 40 70 / 3%); }
-.device-card:hover { border-color: var(--mantine-color-blue-4); }
-.device-strip .device-card-selected { border-color: var(--mantine-color-blue-6); background: light-dark(var(--mantine-color-blue-0), #182d43); box-shadow: inset 0 0 0 1px var(--mantine-color-blue-6); }
-.device-voltage { padding: 2px 0; color: var(--mantine-color-blue-6); }
-.device-voltage h2 { font-size: 27px; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
-.dashboard-empty { padding: 36px 24px; text-align: center; color: var(--mantine-color-dimmed); border-style: dashed; }
-.dashboard-graph { min-width: 0; box-shadow: none; }
-.dashboard-graph .mantine-Tabs-list { gap: 6px; border-bottom: 1px solid var(--mantine-color-default-border); padding-bottom: 8px; }
-.dashboard-graph .mantine-Tabs-tab { border-radius: 8px; font-weight: 600; }
-.dashboard-graph-empty { min-height: clamp(180px, 30vh, 300px); display: grid; place-items: center; text-align: center; border-radius: 10px; background-image: linear-gradient(var(--mantine-color-default-border) 1px, transparent 1px), linear-gradient(90deg, var(--mantine-color-default-border) 1px, transparent 1px); background-size: 64px 64px; }
-.dashboard-graph-empty > div { padding: 24px; background: var(--mantine-color-body); border-radius: 12px; }
-@media (max-width: 600px) { .monitor-dashboard { padding: 4px; } .monitor-dashboard .dashboard-title { font-size: 25px; } .dashboard-graph-empty { min-height: 260px; } }
-
-.device-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 260px); gap: 12px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin; scroll-snap-type: x proximity; }
-.device-strip:empty { display: none; }
-.device-strip .device-card { scroll-snap-align: start; min-width: 0; }
-.device-card .mantine-Group-root { flex-wrap: nowrap; }
-.device-card .mantine-Badge-root { flex-shrink: 0; }
-.device-card .mantine-Button-root { margin-top: 2px; }
-.device-card .mantine-Alert-root { max-height: 66px; overflow-y: auto; font-size: 11px; padding: 6px; }
-.dashboard-graph .mantine-Tabs-tab { padding: 7px 12px; font-size: 12px; }
-@media (max-width: 600px) { .device-strip { grid-auto-columns: 220px; } }
-
-/* Match toolbar and status space across curve tabs to prevent vertical jumps. */
-.curve-toolbar { min-height: 50px; }
-.curve-message { min-height: 22px; }
-@media (max-width: 600px) { .curve-toolbar { min-height: 112px; align-content: end; } .curve-message { min-height: 42px; } }
+.monitor-dashboard .device-card[data-fresh='false'] .device-voltage {
+  color: var(--mantine-color-dimmed);
+}
+.monitor-dashboard .last-reading {
+  border-left: 1px solid var(--mantine-color-default-border);
+  padding-left: 24px;
+}
+.monitor-dashboard .device-strip-multiple {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+}
+.monitor-dashboard .device-strip-multiple .device-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 12px;
+  padding: 2px 4px;
+}
+.monitor-dashboard .device-strip-multiple .device-voltage {
+  text-align: right;
+}
+.monitor-dashboard .device-strip-multiple .last-reading {
+  border-left: 0;
+  padding-left: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.monitor-dashboard .dashboard-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+}
+.monitor-dashboard .dashboard-graph {
+  min-width: 0;
+  border-radius: 6px;
+}
+.monitor-dashboard .dashboard-graph .mantine-Tabs-list {
+  gap: 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+.monitor-dashboard .dashboard-graph .mantine-Tabs-tab {
+  border-radius: 0;
+  font-size: 14px;
+  padding: 10px 6px;
+}
+.monitor-dashboard .curve-toolbar {
+  min-height: 44px;
+  padding: 4px 0;
+}
+.monitor-dashboard .curve-toolbar .mantine-Button-root {
+  background: transparent;
+  border: 1px solid var(--mantine-color-default-border);
+  color: var(--mantine-primary-color-light-color);
+}
+.monitor-dashboard .curve-toolbar .mantine-Button-root:hover:not(:disabled) {
+  border-color: var(--mantine-primary-color-filled);
+}
+.monitor-dashboard .curve-toolbar .mantine-Button-root:disabled {
+  color: var(--mantine-color-dimmed);
+  opacity: 0.5;
+}
+.monitor-dashboard .chart-readout {
+  border-top: 0;
+  padding: 8px 0;
+}
+.monitor-dashboard .chart-empty span {
+  border: 0;
+  font-size: 14px;
+}
+.monitor-dashboard .dashboard-graph-empty {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+}
+@media (max-width: 800px) {
+  .monitor-dashboard .device-row {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 0;
+  }
+  .monitor-dashboard .device-voltage {
+    text-align: right;
+  }
+  .monitor-dashboard .last-reading {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .monitor-dashboard .curve-toolbar {
+    gap: 12px;
+  }
+}

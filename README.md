@@ -1,78 +1,117 @@
-# React + TypeScript + Vite
+# Busbar frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React and TypeScript application for signing in, viewing controller voltage readings,
+exporting records, editing a profile, and provisioning controllers over USB.
 
-Currently, two official plugins are available:
+## Start here: how the code works
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Read these files in order:
 
-## React Compiler
+1. **src/main.tsx** starts React, provides the Redux store, and sets up Mantine styling.
+2. **src/App.tsx** maps URLs to pages. RequireAuth protects signed-in routes;
+   RequireRole limits Device Management to admins. AppLayout supplies the header/sidebar.
+3. **src/pages/Dashboard.tsx** loads the available devices and their latest readings.
+   It passes the selected device to the graph components.
+4. **src/components/charts/DashboardGraph.tsx** owns graph filters, loading state,
+   requests, and realtime polling. VoltageChart.tsx draws those readings with uPlot.
+5. **src/services/voltageApi.ts** requests readings. apiClient.ts adds authentication;
+   authApi.ts builds the API URLs. Follow this chain when investigating a request.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Where to make changes
 
-## Expanding the ESLint configuration
+| Folder/file | Responsibility |
+| --- | --- |
+| src/pages | Screen state, user actions, and page markup |
+| src/components/layout | Header and sidebar |
+| src/components/charts | Graph controls, data preparation, and drawing |
+| src/store/userSlice.ts | Login/verification actions and shared session state |
+| src/store/index.ts | Store setup and session persistence/logout side effects |
+| src/services/session.ts | Validate, read, save, and clear browser session storage |
+| src/services/authApi.ts | Login, profile, password, signup, and API URL handling |
+| src/services/deviceManagementApi.ts | Device registry and provisioning requests |
+| src/services/usbProvisioning.ts | USB connection, sending, buffering, and timeouts |
+| src/services/busbarPacketProtocol.ts | Encode/decode binary packets and check CRC |
+| tests | Automated service and data transformation checks |
+| mock/mock-controller.cjs | Separate JSON handshake mock; not the binary provisioning protocol |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Following a user action
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**Login:** Login.tsx dispatches the login action in userSlice.ts. The action calls
+loginRequest in authApi.ts. Success stores the session in Redux; the store listener
+persists it according to Remember me. RequireAuth verifies the session and handles
+expiry. API requests use its bearer token.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**Graphs:** DashboardGraph requests historical readings for the selected window.
+Realtime mode repeats the request 10 seconds after each request finishes. Changing
+filters or leaving the component aborts the old request and clears its timer.
+chartData.ts prepares the points; VoltageChart manages the external chart instance.
+TabularData.tsx separately loads records, paginates them, and exports CSV.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**USB registration:** MacIdManagement.tsx connects and sends HELLO to obtain the
+controller identity. provisioningAttempt.ts chooses a new registration or an eligible
+retry. Azure supplies a transaction; USB sends configuration (A3) and receives a proof
+(A4). Azure verifies the proof and activates the device, then the frontend sends the
+controller confirmation (A5). Unfinished registrations are cancelled on failure;
+an A5 failure after activation does not undo activation. The USB connection closes
+in the final cleanup block.
 
-```
+createUsbProvisioningSession() returns ordinary functions such as connect(), hello(),
+provision(), and close(). Each call creates its own local port, reader, and buffer.
+Those functions remember these variables (a JavaScript closure), so no class or
+this keyword is needed.
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Reading React and TypeScript syntax
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **useState** holds a value used on screen; its setter schedules a render.
+- **useRef** remembers a mutable value without rendering, such as a USB session or timer.
+- **useEffect** synchronizes with APIs/events; its returned function performs cleanup.
+- **useMemo/useCallback** retain a calculated value/function until dependencies change.
+- **async/await** waits for asynchronous work. **try/catch/finally** separates success,
+  errors, and cleanup that runs even after an error or early return.
+- **?.** accesses something only when it exists. **??** supplies a fallback only for
+  null/undefined. **...** copies or expands object properties/array elements.
+- **type/interface** describe data for TypeScript checks; they do not run in the browser.
+- **void someAsyncFunction()** intentionally ignores its returned promise; it does not
+  catch errors. Look inside that function for its error handling.
+- Redux Toolkit reducer assignments are handled by Immer, which produces immutable
+  updates. Ordinary function declarations are also modern JavaScript and remain useful.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Local commands and readability conventions
 
-```
+Run npm install, then npm run dev. Use npm run build, npm test, and npm run lint
+for verification. In PowerShell with script execution disabled, use npm.cmd instead.
+Environment/proxy configuration is described below and in vite.config.ts. The current
+voltage URL implementation uses /apim-read locally and VITE_APIM_READ_BASE_URL in
+production; older deployment notes below describe earlier backend routing.
+
+Keep one statement per line, use descriptive local names, and put braces around
+conditional/loop bodies. ESLint enforces braces, const where possible, and no var in
+application code. .prettierrc.json records the formatting settings; to reformat with
+the same formatter, run:
+
+    npx prettier@3.6.2 --write "src/**/*.{ts,tsx,css}" "mock/*.cjs"
+
+Two tests in tests/auth.test.ts still disagree with the current APIM routing.
+The build and lint checks pass. USB tests use simulated streams and do not replace
+verification with a physical controller.
+
+## Telemetry status and HART branding
+
+The title is **Busbar Voltage Monitoring System**. The dashboard distinguishes
+enabled registration from fresh telemetry: a reading is fresh for 60 seconds after
+its receivedAt timestamp. The clock advances independently of API polling, so an
+unchanged reading becomes stale even during a slow request. This describes data
+freshness, not a confirmed physical connection or electrical alarm condition.
+
+Stale or unavailable current values display a dash. Last received values and their
+timestamps remain visible separately. Graphs retain captured history and explicitly
+label stale data; the last successful fetch time is separate from the sample time.
+Voltage formatting retains up to three decimal places without trailing zeroes.
+
+CompanyBrand.tsx displays the official logo bundled from src/assets/hartLogo.png.
+The header, login, and signup share this component. No environment configuration
+is required. VITE_HART_LOGO_URL optionally overrides the image location at build
+time; if the asset fails to load, the HART text brand remains visible.
 
 ## Production voltage API configuration
 

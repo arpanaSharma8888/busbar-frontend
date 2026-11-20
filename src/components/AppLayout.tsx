@@ -1,4 +1,3 @@
-
 import { AppShell, Burger, ScrollArea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Outlet } from 'react-router-dom';
@@ -11,9 +10,9 @@ export default function AppLayout() {
 
   return (
     <AppShell
-      header={{ height: 58 }}
+      header={{ height: 64 }}
       navbar={{
-        width: 204,
+        width: 224,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
@@ -21,13 +20,7 @@ export default function AppLayout() {
     >
       <AppShell.Header>
         <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          <Burger
-            opened={opened}
-            onClick={toggle}
-            hiddenFrom="sm"
-            size="sm"
-            ml="md"
-          />
+          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" ml="md" />
           <div style={{ flex: 1 }}>
             <Header />
           </div>

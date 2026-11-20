@@ -1,4 +1,3 @@
-
 import { NavLink, Stack } from '@mantine/core';
 import {
   LayoutDashboard,
@@ -23,25 +22,31 @@ const links = [
 
 export default function Sidebar() {
   const location = useLocation();
-  const role = useAppSelector(state => state.user.session?.user.role);
+  const role = useAppSelector((state) => state.user.session?.user.role);
 
   return (
     <Stack gap="md">
       <Stack gap={6} px="sm" py="lg">
-        {links.filter(link => link.path !== '/mac-ids' || role === 'admin').map(({ label, path, icon: Icon }) => (
-          <NavLink
-            key={path}
-            component={RouterNavLink}
-            to={path}
-            label={label}
-            leftSection={<Icon size={18} />}
-            active={location.pathname === path || location.pathname.startsWith(`${path}/`)}
-            className={location.pathname === path || location.pathname.startsWith(`${path}/`) ? 'sidebar-link sidebar-link-active' : 'sidebar-link'}
-            variant="light"
-            color="blue"
-            style={{ borderRadius: 8 }}
-          />
-        ))}
+        {links
+          .filter((link) => link.path !== '/mac-ids' || role === 'admin')
+          .map(({ label, path, icon: Icon }) => (
+            <NavLink
+              key={path}
+              component={RouterNavLink}
+              to={path}
+              label={label}
+              leftSection={<Icon size={18} />}
+              active={location.pathname === path || location.pathname.startsWith(`${path}/`)}
+              className={
+                location.pathname === path || location.pathname.startsWith(`${path}/`)
+                  ? 'sidebar-link sidebar-link-active'
+                  : 'sidebar-link'
+              }
+              variant="light"
+              color="teal"
+              style={{ borderRadius: 8 }}
+            />
+          ))}
       </Stack>
     </Stack>
   );

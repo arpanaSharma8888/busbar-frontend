@@ -1,17 +1,156 @@
-:root { font-synthesis: none; -webkit-font-smoothing: antialiased; }
-body { margin: 0; }
-.mantine-AppShell-main { background: #f5f7fa; }
-[data-mantine-color-scheme='dark'] .mantine-AppShell-main { background: #141b24; }
-.mantine-AppShell-main > .mantine-Stack-root { max-width: 1700px; margin-inline: auto; }
-.mantine-AppShell-navbar { background: var(--mantine-color-body); }
-.mantine-NavLink-root { font-size: 13px; padding: 11px 13px; }
+:root {
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  margin: 0;
+}
+.system-header {
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+.system-identity {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+.company-brand {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.company-wordmark {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  line-height: 1.1;
+  color: light-dark(#123047, #e1edf7);
+}
+.brand-accent {
+  color: var(--mantine-primary-color-filled);
+}
+.company-logo {
+  width: 72px;
+  height: 88px;
+  object-fit: contain;
+  object-position: left center;
+}
+.system-header .company-logo {
+  width: 43px;
+  height: 52px;
+}
+.system-title {
+  border-left: 1px solid var(--mantine-color-default-border);
+  padding-left: 24px;
+}
+.system-title > p {
+  font-size: clamp(14px, 1.3vw, 20px);
+  letter-spacing: -0.3px;
+}
+.mantine-AppShell-header {
+  border-top: 4px solid var(--mantine-primary-color-filled);
+}
+.chart-value-label {
+  color: var(--mantine-color-dimmed);
+  font-size: 13px;
+  font-weight: 400;
+}
+.mantine-AppShell-main {
+  background: #f5f7fa;
+}
+[data-mantine-color-scheme='dark'] .mantine-AppShell-main {
+  background: #141b24;
+}
+.mantine-AppShell-main > .mantine-Stack-root {
+  max-width: 1700px;
+  margin-inline: auto;
+  width: 100%;
+  padding-inline: 4px;
+}
+.mantine-AppShell-navbar {
+  background: #132c3e;
+  color: #e1edf5;
+}
+.mantine-AppShell-navbar .sidebar-link {
+  color: #c6d9e7;
+}
+.mantine-AppShell-navbar .sidebar-link:hover {
+  background: #203e53;
+  color: white;
+}
+.mantine-NavLink-root {
+  font-size: 13px;
+  padding: 11px 13px;
+}
 .mantine-NavLink-root.sidebar-link-active,
-.mantine-NavLink-root.sidebar-link-active:hover { background: light-dark(#dbeafe, #203b58); color: light-dark(#154b85, #b3d9ff); box-shadow: inset 4px 0 0 var(--mantine-color-blue-6); }
-.sidebar-link-active .mantine-NavLink-label { font-weight: 700; }
-.mantine-Paper-root { box-shadow: none; }
-.mantine-Table-th { font-size: 12px; color: var(--mantine-color-dimmed); font-weight: 600; }
-.mantine-Table-td { font-size: 13px; padding-block: 13px; font-variant-numeric: tabular-nums; }
-.mantine-Input-label { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
-.mantine-Button-root { font-weight: 550; }
-.curve-toolbar { min-height: 46px; padding: 0 4px 10px; }
-@media (max-width: 600px) { .mantine-AppShell-main { padding-inline: 12px; } .mantine-AppShell-header .mantine-Group-root { gap: 8px; } }
+.mantine-NavLink-root.sidebar-link-active:hover {
+  background: var(--mantine-primary-color-filled);
+  color: light-dark(#fff, #062c25);
+  box-shadow: inset 4px 0 0 var(--mantine-color-teal-3);
+}
+.sidebar-link-active .mantine-NavLink-label {
+  font-weight: 700;
+}
+.mantine-Paper-root {
+  box-shadow: none;
+}
+.mantine-Table-th {
+  font-size: 14px;
+  color: var(--mantine-color-dimmed);
+  font-weight: 600;
+}
+.mantine-Table-td {
+  font-size: 14px;
+  padding-block: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.mantine-Input-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.mantine-Button-root {
+  font-weight: 550;
+}
+.curve-toolbar {
+  min-height: 46px;
+  padding: 0 4px 10px;
+}
+@media (max-width: 600px) {
+  .system-header {
+    padding-inline: 10px;
+  }
+  .system-identity {
+    gap: 10px;
+    flex: 1;
+  }
+  .system-title {
+    padding-left: 10px;
+  }
+  .system-title > p {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+  .system-header .company-wordmark {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+  .system-header .company-logo {
+    width: 36px;
+    height: 44px;
+  }
+  .system-header > .mantine-Group-root {
+    gap: 2px;
+    flex-wrap: nowrap;
+  }
+  .system-header > .mantine-Group-root > .mantine-Group-root {
+    display: none;
+  }
+  .mantine-AppShell-main {
+    padding-inline: 12px;
+  }
+  .mantine-AppShell-header .mantine-Group-root {
+    gap: 8px;
+  }
+}

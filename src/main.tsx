@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import { MantineProvider, createTheme } from '@mantine/core';
+import { MantineProvider, SegmentedControl, createTheme } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import 'uplot/dist/uPlot.min.css';
@@ -10,10 +10,21 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 
 const theme = createTheme({
-  primaryColor: 'blue',
+  primaryColor: 'teal',
+  primaryShade: { light: 8, dark: 5 },
+  autoContrast: true,
+  components: {
+    SegmentedControl: SegmentedControl.extend({ defaultProps: { color: 'teal' } }),
+  },
   defaultRadius: 'md',
   fontFamily: "'Segoe UI', Arial, sans-serif",
-  headings: { fontFamily: "'Segoe UI', Arial, sans-serif", sizes: { h2: { fontSize: '22px', fontWeight: '600' }, h4: { fontSize: '15px', fontWeight: '600' } } },
+  headings: {
+    fontFamily: "'Segoe UI', Arial, sans-serif",
+    sizes: {
+      h2: { fontSize: '22px', fontWeight: '600' },
+      h4: { fontSize: '15px', fontWeight: '600' },
+    },
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -21,5 +32,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <App />
     </Provider>
-  </MantineProvider>
+  </MantineProvider>,
 );

@@ -1,4 +1,3 @@
-
 export interface VoltageReading {
   deviceId: string;
   macId: string;
