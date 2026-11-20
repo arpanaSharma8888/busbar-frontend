@@ -29,6 +29,10 @@ jobs:
           VITE_AUTH_API_BASE_URL: "https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net"
           # Voltage requests use the authenticated proxy on the auth app.
           VITE_API_BASE_URL: "https://busbar-auth-api-dev-escfdmdebmdyahg5.centralindia-01.azurewebsites.net"
+          # Production voltage read requests go through APIM (not direct Functions)
+          VITE_APIM_READ_BASE_URL: https://busbar-apim-dev.azure-api.net/v1
+          # Optional development-only proxy target
+          APIM_GATEWAY_URL: https://busbar-apim-dev.azure-api.net
 
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_PLANT_07CAE0100 }}
